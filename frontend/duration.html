@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Choose Duration</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* Reset and Base Styling */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Poppins', 'Segoe UI', sans-serif;
+      height: 100vh;
+      background: linear-gradient(135deg, #121212, #1e1e2f);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    /* Header Bar */
+    .header-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      background-color: rgba(20, 20, 35, 0.95);
+      color: white;
+      padding: 8px 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.8rem;
+      z-index: 100;
+      border-bottom: 1px solid rgb(255, 111, 0);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .info-pill {
+      background: rgba(30, 30, 47, 0.7);
+      padding: 5px 10px;
+      border-radius: 4px;
+      font-weight: 500;
+      border: 1px solid rgba(255, 111, 0, 0.3);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 45%;
+    }
+    
+    /* Main Container */
+    .main-container {
+      width: 100%;
+      max-width: 1200px;
+      height: 100vh;
+      padding: 20px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    /* Logo Styling */
+    .logo-container {
+      margin-bottom: 15px;
+      margin-top: 40px; /* Space for header */
+    }
+
+    .logo-container img {
+      height: 60px;
+      object-fit: contain;
+    }
+
+    /* Heading Styling */
+    h1 {
+      color: rgb(255, 111, 0);
+      font-size: 2rem;
+      margin-bottom: 15px;
+      font-weight: 700;
+    }
+
+    /* Selected Console Display */
+    .selected-console {
+      background-color: rgba(30, 30, 47, 0.7);
+      padding: 6px 12px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-size: 1rem;
+      display: inline-block;
+      border: 1px solid rgba(255, 111, 0, 0.3);
+    }
+
+    .selected-console strong {
+      color: rgb(255, 111, 0);
+      font-weight: 600;
+    }
+
+    /* Selections Container - For Animation */
+    .selections-container {
+      display: flex;
+      flex-wrap: nowrap;
+      position: relative;
+      transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      width: 100%;
+      flex: 1;
+      margin-top: 20px;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .selections-container.shifted {
+      transform: translateX(-25%);
+    }
+
+    /* Duration Container */
+    .duration-container {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    /* Duration Options Grid - Improved alignment */
+    .duration-options {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 25px; /* Increased gap */
+      margin: 0 auto;
+      max-width: 800px; /* Increased max width */
+      width: 100%;
+    }
+
+    /* Duration Box Styling - LARGER */
+    .duration-box {
+      background: linear-gradient(145deg, #1e1e2f, #252540);
+      border: 2px solid rgba(255, 111, 0, 0.6);
+      border-radius: 15px; /* More rounded corners */
+      padding: 30px 20px; /* Increased padding */
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      position: relative;
+      min-height: 160px; /* Increased height */
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3); /* Stronger shadow */
+    }
+
+    /* Selected duration box */
+    .duration-box.selected {
+      background: linear-gradient(145deg, rgb(255, 111, 0), rgb(220, 90, 0));
+      border-color: white;
+      transform: scale(1.1);
+      box-shadow: 0 10px 25px rgba(255, 111, 0, 0.4);
+      z-index: 10;
+    }
+
+    /* Non-selected boxes when one is selected */
+    .duration-options.expanded .duration-box:not(.selected) {
+      transform: scale(0.8);
+      opacity: 0.5;
+    }
+
+    .duration-time {
+      font-size: 2rem; /* Larger text */
+      font-weight: 700;
+      color: white;
+    }
+
+    .duration-price {
+      font-size: 2rem; /* Larger text */
+      font-weight: 700;
+      color: rgb(255, 111, 0);
+      transition: color 0.3s ease;
+      margin-top: 10px;
+    }
+
+    .duration-box.selected .duration-price {
+      color: white;
+    }
+
+    .price-details {
+      font-size: 1rem; /* Larger text */
+      opacity: 0.8;
+      margin-top: 8px;
+    }
+
+    .best-value {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: #4CAF50;
+      color: white;
+      font-size: 0.8rem; /* Larger text */
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 12px;
+    }
+
+    /* Controller selection - Hidden by default */
+    .controller-container {
+      max-height: 0;
+      overflow: hidden;
+      transition: all 0.4s ease-out;
+      width: 100%;
+      margin-top: 10px;
+    }
+
+    .controller-options {
+      display: flex;
+      justify-content: center;
+      gap: 20px; /* Increased gap */
+      padding-top: 20px; /* Increased padding */
+      border-top: 1px solid rgba(255, 255, 255, 0.2);
+      margin-top: 15px;
+    }
+
+    /* Controller buttons - LARGER */
+    .controller-option {
+      background: rgba(20, 20, 35, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 10px;
+      padding: 10px 0;
+      width: 65px; /* Wider buttons */
+      height: 50px; /* Taller buttons */
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s ease;
+      font-weight: 600;
+      font-size: 1.3rem; /* Larger text */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .controller-option.selected {
+      background: rgba(255, 255, 255, 0.9);
+      color: rgb(255, 111, 0);
+      transform: scale(1.15);
+      box-shadow: 0 2px 8px rgba(255, 255, 255, 0.4);
+    }
+
+    /* Show controller options when expanded */
+    .duration-box.selected .controller-container {
+      max-height: 100px;
+    }
+
+    /* Summary Container - Hidden initially, appears on right after player selection */
+    .summary-container {
+      position: absolute;
+      right: -100%;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 40%;
+      max-width: 400px;
+      opacity: 0;
+      transition: right 0.5s ease, opacity 0.5s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .summary-container.visible {
+      right: 20px;
+      opacity: 1;
+    }
+
+    /* Price summary */
+    .price-summary {
+      background: rgba(30, 30, 47, 0.7);
+      padding: 20px;
+      border-radius: 10px;
+      margin: 0 auto 25px;
+      text-align: left;
+      border: 1px solid rgba(255, 111, 0, 0.3);
+      width: 100%;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      font-size: 1.1rem;
+    }
+
+    .summary-row.total {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px dashed rgba(255, 255, 255, 0.2);
+      font-weight: 700;
+      font-size: 1.3rem;
+    }
+
+    .summary-label {
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    .summary-value {
+      font-weight: 600;
+      color: rgb(255, 111, 0);
+    }
+
+    /* Button container in summary */
+    .button-container {
+      display: flex;
+      justify-content: space-between;
+      gap: 15px;
+      width: 100%;
+    }
+
+    /* Back Button - In summary and fixed position */
+    .back-button {
+      position: fixed;
+      bottom: 30px;
+      left: 30px;
+      padding: 12px 30px;
+      font-size: 1.2rem;
+      color: white;
+      background: rgba(30, 30, 47, 0.7);
+      border: 2px solid rgba(255, 111, 0, 0.6);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-weight: 600;
+      z-index: 50;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+      opacity: 1;
+    }
+
+    .back-button.faded {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .back-button:hover {
+      background: rgba(255, 111, 0, 0.3);
+      transform: translateY(-2px);
+    }
+
+    /* Continue Button */
+    .continue-button {
+      padding: 12px 30px;
+      font-size: 1.2rem;
+      color: white;
+      background: rgb(255, 111, 0);
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-weight: 600;
+      flex: 1;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    }
+
+    .continue-button:hover {
+      background: rgb(220, 90, 0);
+      transform: translateY(-2px);
+    }
+
+    .continue-button:disabled {
+      background: #666;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    /* Summary buttons container */
+    .summary-buttons {
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+      gap: 15px;
+    }
+    
+    /* Back button in summary */
+    .summary-back {
+      padding: 12px 30px;
+      font-size: 1.2rem;
+      color: white;
+      background: rgba(30, 30, 47, 0.7);
+      border: 2px solid rgba(255, 111, 0, 0.6);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-weight: 600;
+      flex: 1;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    }
+    
+    .summary-back:hover {
+      background: rgba(255, 111, 0, 0.3);
+      transform: translateY(-2px);
+    }
+  </style>
+</head>
+<body>
+ 
+  
+  <div class="main-container">
+    <div>
+      <div class="logo-container">
+        <img src="logo.png" alt="Gamespot Logo">
+      </div>
+      <h1>Choose Your Duration</h1>
+      
+      <div class="selected-console">
+        You selected: <strong id="consoleName">Loading...</strong>
+      </div>
+    </div>
+    
+    <!-- This container will slide left when player count is selected -->
+    <div class="selections-container" id="selectionsContainer">
+      <div class="duration-container">
+        <div class="duration-options" id="durationOptions">
+          <!-- Duration options will be populated by JavaScript -->
+        </div>
+      </div>
+    </div>
+    
+    <!-- This container appears on the right after player selection -->
+    <div class="summary-container" id="summaryContainer">
+      <div class="price-summary" id="priceSummary">
+        <div class="summary-row">
+          <div class="summary-label">Duration:</div>
+          <div class="summary-value" id="summaryDuration">30 min</div>
+        </div>
+        <div class="summary-row">
+          <div class="summary-label">Players:</div>
+          <div class="summary-value" id="summaryPlayers">1 Player</div>
+        </div>
+        <div class="summary-row total">
+          <div class="summary-label">Total:</div>
+          <div class="summary-value" id="summaryTotal">₹70</div>
+        </div>
+      </div>
+      
+      <!-- Summary buttons side by side -->
+      <div class="summary-buttons">
+        <button class="summary-back" onclick="goBack()">Back</button>
+        <button class="continue-button" id="continueButton">Continue</button>
+      </div>
+    </div>
+    
+    <!-- Initially visible back button that fades out -->
+    <button class="back-button" id="fixedBackButton" onclick="goBack()">Back</button>
+  </div>
+
+  <script>
+    const selectedConsole = localStorage.getItem('selectedConsole');
+
+    // Redirect if no console is selected
+    if (!selectedConsole) {
+      alert('No console selected. Redirecting to homepage...');
+      window.location.href = 'index.html';
+    } else {
+      // Display selected console name
+      document.getElementById('consoleName').textContent = selectedConsole;
+    }
+
+    // Updated pricing structure based on duration and number of players
+    const pricingMatrix = {
+      30: { 1: 70, 2: 90, 4: 150 },
+      60: { 1: 130, 2: 150, 4: 210 },
+      90: { 1: 170, 2: 200, 4: 270 },
+      120: { 1: 210, 2: 240, 4: 300 }
+    };
+
+    // Duration data with formatted display names
+    const durationPricing = [
+      { minutes: 30, display: "30 min", bestValue: false },
+      { minutes: 60, display: "1 hour", bestValue: false },
+      { minutes: 90, display: "1.5 hour", bestValue: false },
+      { minutes: 120, display: "2 hour", bestValue: true }
+    ];
+
+    // Global state
+    let selectedDuration = null;
+    let selectedControllers = null;
+
+    // Populate duration options
+    function loadDurations() {
+      const options = document.getElementById('durationOptions');
+      options.innerHTML = ''; // Clear previous content
+
+      durationPricing.forEach((item) => {
+        const box = document.createElement('div');
+        box.className = 'duration-box';
+        box.setAttribute('data-minutes', item.minutes);
+        
+        // Create time element with proper display format
+        const timeEl = document.createElement('div');
+        timeEl.className = 'duration-time';
+        timeEl.textContent = item.display;
+        box.appendChild(timeEl);
+        
+        // Create price element - show only 1P price initially
+        const priceEl = document.createElement('div');
+        priceEl.className = 'duration-price';
+        priceEl.textContent = `₹${pricingMatrix[item.minutes][1]}`; // Show 1P price
+        priceEl.id = `price-${item.minutes}`;
+        box.appendChild(priceEl);
+        
+        // Create price details element
+        const detailsEl = document.createElement('div');
+        detailsEl.className = 'price-details';
+        detailsEl.textContent = `1 Player`;
+        detailsEl.id = `details-${item.minutes}`;
+        box.appendChild(detailsEl);
+        
+        // Add best value badge if applicable
+        if (item.bestValue) {
+          const badgeEl = document.createElement('div');
+          badgeEl.className = 'best-value';
+          badgeEl.textContent = 'BEST VALUE';
+          box.appendChild(badgeEl);
+        }
+        
+        // Create controller container (hidden initially)
+        const controllerContainer = document.createElement('div');
+        controllerContainer.className = 'controller-container';
+        
+        // Create controller options
+        const controllerOptions = document.createElement('div');
+        controllerOptions.className = 'controller-options';
+        
+        // Add controller buttons (1P, 2P, 4P)
+        [1, 2, 4].forEach(count => {
+          const controllerOption = document.createElement('div');
+          controllerOption.className = 'controller-option';
+          if (count === 1) controllerOption.classList.add('selected'); // Auto-select 1P
+          controllerOption.setAttribute('data-controllers', count);
+          controllerOption.textContent = `${count}P`;
+          
+          // Add click handler for controller selection
+          controllerOption.onclick = (e) => {
+            e.stopPropagation(); // Prevent triggering parent click
+            selectControllers(count, item.minutes);
+            
+            // Update the price on the duration button
+            const priceElement = document.getElementById(`price-${item.minutes}`);
+            const detailsElement = document.getElementById(`details-${item.minutes}`);
+            if (priceElement) {
+              priceElement.textContent = `₹${pricingMatrix[item.minutes][count]}`;
+              detailsElement.textContent = `${count} Player${count > 1 ? 's' : ''}`;
+            }
+          };
+          
+          controllerOptions.appendChild(controllerOption);
+        });
+        
+        controllerContainer.appendChild(controllerOptions);
+        box.appendChild(controllerContainer);
+        
+        // Attach click handler for duration selection
+        box.onclick = () => selectDuration(item.minutes, box);
+        
+        options.appendChild(box);
+      });
+    }
+
+    // Select duration
+    function selectDuration(minutes, clickedBox) {
+      selectedDuration = minutes;
+      selectedControllers = 1; // Auto-select 1P by default
+      
+      // Get duration options container
+      const durationOptions = document.getElementById('durationOptions');
+      
+      // Add expanded class to container
+      durationOptions.classList.add('expanded');
+      
+      // Update UI for duration boxes
+      const durationBoxes = document.querySelectorAll('.duration-box');
+      durationBoxes.forEach(box => {
+        if (box === clickedBox) {
+          box.classList.add('selected');
+          
+          // Auto-select 1P when selecting duration
+          const controllerOptions = box.querySelectorAll('.controller-option');
+          controllerOptions.forEach(option => {
+            if (parseInt(option.getAttribute('data-controllers')) === 1) {
+              option.classList.add('selected');
+            } else {
+              option.classList.remove('selected');
+            }
+          });
+        } else {
+          box.classList.remove('selected');
+          
+          // Reset controller selection in other boxes
+          const controllerOptions = box.querySelectorAll('.controller-option');
+          controllerOptions.forEach(option => option.classList.remove('selected'));
+        }
+      });
+      
+      // Update summary since we auto-selected 1P
+      updateSummary();
+      
+      // Show summary container after a brief delay
+      setTimeout(() => {
+        document.getElementById('summaryContainer').classList.add('visible');
+        document.getElementById('selectionsContainer').classList.add('shifted');
+        document.getElementById('fixedBackButton').classList.add('faded');
+      }, 200);
+    }
+
+    // Select number of controllers
+    function selectControllers(count, minutes) {
+      selectedControllers = count;
+      
+      // Find the selected duration box
+      const selectedBox = document.querySelector('.duration-box.selected');
+      
+      // Update UI for controller options in the selected box
+      const controllerOptions = selectedBox.querySelectorAll('.controller-option');
+      controllerOptions.forEach(option => {
+        if (parseInt(option.getAttribute('data-controllers')) === count) {
+          option.classList.add('selected');
+        } else {
+          option.classList.remove('selected');
+        }
+      });
+      
+      // Update price summary
+      updateSummary();
+    }
+
+    // Update price summary based on selected duration and controllers
+    function updateSummary() {
+      if (!selectedDuration || !selectedControllers) return;
+      
+      // Get the price from our pricing matrix
+      const price = pricingMatrix[selectedDuration][selectedControllers];
+      
+      // Get the display format for the selected duration
+      const durationDisplay = durationPricing.find(d => d.minutes === selectedDuration).display;
+      
+      // Update summary elements
+      document.getElementById('summaryDuration').textContent = durationDisplay;
+      document.getElementById('summaryPlayers').textContent = `${selectedControllers} Player${selectedControllers > 1 ? 's' : ''}`;
+      document.getElementById('summaryTotal').textContent = `₹${price}`;
+    }
+
+    // Redirect to payment page
+    function redirectToPayment() {
+      if (!selectedDuration || !selectedControllers) {
+        alert('Please select both duration and number of players.');
+        return;
+      }
+      
+      // Get the final price from our pricing matrix
+      const finalPrice = pricingMatrix[selectedDuration][selectedControllers];
+      
+      // Save the selected duration, controllers, and price to localStorage
+      localStorage.setItem('selectedDuration', selectedDuration);
+      localStorage.setItem('selectedPrice', finalPrice);
+      localStorage.setItem('selectedControllers', selectedControllers);
+      localStorage.setItem('controllerPrice', 0); // We're not using per-controller pricing anymore
+      localStorage.setItem('totalPrice', finalPrice);
+
+      // Redirect to payment page
+      window.location.href = 'payment.html';
+    }
+
+    // Continue button event listener
+    document.getElementById('continueButton').addEventListener('click', redirectToPayment);
+
+    // Redirect to homepage
+    function goBack() {
+      window.location.href = 'index.html';
+    }
+
+    // Initialize the page
+    loadDurations();
+  </script>
+</body>
+</html>

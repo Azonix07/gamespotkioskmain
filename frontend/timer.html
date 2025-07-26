@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><title>Game Timer</title>
+<style>
+body { font-family: Arial; background: #111; color: #fff; text-align: center; }
+#timer { font-size: 48px; margin-top: 20px; }
+</style></head><body><h2>Enjoy your game!</h2>
+<div id="timer">Starting...</div>
+<script>
+const minutes = parseInt(localStorage.getItem('duration'));
+let endTime = new Date().getTime() + minutes * 60000;
+function updateTimer() {
+  let now = new Date().getTime();
+  let distance = endTime - now;
+  if (distance < 0) return document.getElementById('timer').textContent = "Time's up!";
+  let mins = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+  let secs = Math.floor((distance % (1000 * 60)) / 1000);
+  document.getElementById('timer').textContent = mins + "m " + secs + "s";
+  setTimeout(updateTimer, 1000);
+}
+updateTimer();
+</script></body></html>

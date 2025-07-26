@@ -1,0 +1,1114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gamespot Kiosk - Payment</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* Global Styling */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    /* Body Styling */
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Poppins', 'Segoe UI', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      overflow: hidden;
+      text-align: center;
+      color: white;
+      background: linear-gradient(135deg, #121212, #1e1e2f);
+    }
+
+    /* Video Background */
+    .video-background {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: -1;
+      filter: brightness(0.6) contrast(1.1);
+    }
+
+    /* Overlay Styling */
+    .overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, rgba(0, 0, 0, 0.75) 0%, rgba(12, 12, 24, 0.9) 100%);
+      z-index: 0;
+    }
+
+    /* Main Container Styling */
+    .main-container {
+      z-index: 2;
+      position: relative;
+      width: 90%;
+      max-width: 1100px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 20px;
+      padding: 0 15px;
+      height: 100vh;
+    }
+
+    /* Left Column - Payment Details */
+    .payment-column {
+      flex: 1;
+      max-width: 450px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    /* Right Column - Camera */
+    .camera-column {
+      flex: 1;
+      max-width: 450px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Heading Styling */
+    h1 {
+      color: rgb(255, 111, 0);
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+      position: relative;
+      display: inline-block;
+      margin-bottom: 5px;
+    }
+
+    h2 {
+      color: white;
+      font-size: 1.3rem;
+      margin: 10px 0 5px;
+      font-weight: 600;
+    }
+
+    /* Payment Details */
+    .payment-details {
+      background: rgba(30, 30, 47, 0.7);
+      padding: 15px;
+      border-radius: 10px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 111, 0, 0.2);
+    }
+
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .detail-row:last-child {
+      border-bottom: none;
+    }
+
+    .detail-label {
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    .detail-value {
+      font-weight: 600;
+      color: rgb(255, 111, 0);
+    }
+
+    .total-row {
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 2px solid rgba(255, 111, 0, 0.3);
+      font-size: 1.1rem;
+    }
+
+    /* Camera Section */
+    .camera-container {
+      width: 100%;
+      position: relative;
+      overflow: hidden;
+      border-radius: 10px;
+      border: 2px solid rgb(255, 111, 0);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      background-color: #000;
+      aspect-ratio: 4/3;
+    }
+
+    #cameraFeed, #canvas {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transform: scaleX(-1); /* Mirror effect */
+    }
+
+    #canvas {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+
+    .camera-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 10;
+    }
+
+    .camera-message {
+      color: white;
+      font-size: 1.1rem;
+      font-weight: 600;
+      text-align: center;
+      margin-bottom: 15px;
+      max-width: 80%;
+      line-height: 1.3;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    }
+
+    /* Face Frame */
+    .face-outline {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 180px;
+      height: 220px;
+      border: 3px dashed rgba(255, 111, 0, 0.7);
+      border-radius: 50% 50% 45% 45%;
+      box-shadow: 0 0 0 2000px rgba(0, 0, 0, 0.3);
+      z-index: 5;
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      padding-bottom: 15px;
+    }
+
+    .face-outline p {
+      background: rgba(0, 0, 0, 0.6);
+      padding: 4px 8px;
+      border-radius: 15px;
+      font-size: 0.8rem;
+      color: white;
+    }
+
+    /* Button Styling */
+    .btn {
+      padding: 10px 20px;
+      font-size: 1rem;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-weight: 600;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .btn::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      transition: 0.5s;
+    }
+
+    .btn:hover::after {
+      left: 100%;
+    }
+
+    .btn-orange {
+      background: rgb(255, 111, 0);
+    }
+
+    .btn-orange:hover {
+      background: #ff6b6b;
+      transform: translateY(-3px);
+    }
+
+    .btn-gray {
+      background: #444;
+    }
+
+    .btn-gray:hover {
+      background: #666;
+      transform: translateY(-3px);
+    }
+
+    .btn-disabled {
+      background: #555;
+      cursor: not-allowed;
+      opacity: 0.7;
+    }
+
+    .btn-disabled:hover {
+      transform: none;
+    }
+
+    .btn-disabled::after {
+      display: none;
+    }
+
+    /* Payment Methods - LARGER */
+    .payment-methods {
+      display: flex;
+      justify-content: center;
+      gap: 25px;
+      margin: 15px 0;
+    }
+
+    .payment-method {
+      background: rgba(30, 30, 47, 0.7);
+      padding: 20px 30px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.3s;
+      border: 2px solid transparent;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-width: 140px;
+    }
+
+    .payment-method:hover {
+      border-color: rgb(255, 111, 0);
+      transform: translateY(-3px);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+    }
+
+    .payment-method.selected {
+      border-color: rgb(255, 111, 0);
+      background: rgba(255, 111, 0, 0.2);
+    }
+
+    .payment-method img {
+      height: 60px;
+      width: auto;
+      margin-bottom: 10px;
+    }
+
+    .payment-method-name {
+      font-weight: 600;
+      font-size: 1.1rem;
+      margin-top: 10px;
+    }
+
+    /* Status Messages */
+    .status-message {
+      padding: 8px 15px;
+      border-radius: 6px;
+      margin: 10px 0;
+      font-weight: 500;
+      font-size: 0.9rem;
+      animation: fadeIn 0.5s;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .error {
+      background: rgba(255, 0, 0, 0.2);
+      border: 1px solid #f44336;
+      color: #ff9999;
+    }
+
+    .success {
+      background: rgba(0, 128, 0, 0.2);
+      border: 1px solid #4CAF50;
+      color: #99ff99;
+    }
+
+    .info {
+      background: rgba(0, 0, 255, 0.2);
+      border: 1px solid #2196F3;
+      color: #99ccff;
+    }
+
+    .loading-spinner {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(255, 111, 0, 0.3);
+      border-radius: 50%;
+      border-top-color: rgb(255, 111, 0);
+      animation: spin 1s linear infinite;
+      margin-left: 8px;
+      vertical-align: middle;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Navigation buttons */
+    .nav-buttons {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 15px;
+      width: 100%;
+      gap: 15px;
+    }
+    
+    /* UPI QR Code Container */
+    .upi-container {
+      display: none;
+      background: rgba(30, 30, 47, 0.7);
+      padding: 20px;
+      border-radius: 10px;
+      max-width: 320px;
+      margin: 15px auto;
+      color: white;
+      border: 1px solid rgba(255, 111, 0, 0.3);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      text-align: center;
+    }
+    
+    .upi-container p {
+      margin: 10px 0;
+      font-weight: 500;
+      font-size: 0.95rem;
+      line-height: 1.4;
+      opacity: 0.9;
+    }
+
+    .upi-test-note {
+      margin-top: 10px;
+      background-color: rgba(255, 255, 0, 0.1);
+      border: 1px dashed rgba(255, 255, 0, 0.5);
+      border-radius: 6px;
+      padding: 8px 10px;
+      font-size: 0.85rem;
+    }
+    
+    /* Razorpay Button Styling */
+    .razorpay-button {
+      background: linear-gradient(to right, #3371FF, #0048FF);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 15px 25px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      box-shadow: 0 8px 15px rgba(0, 0, 0, 0.3);
+      margin: 15px auto;
+      width: 90%;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .razorpay-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 20px rgba(0, 0, 0, 0.4);
+      background: linear-gradient(to right, #0048FF, #3371FF);
+    }
+    
+    .razorpay-button:active {
+      transform: translateY(0);
+    }
+    
+    .razorpay-button::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      transition: 0.5s;
+    }
+    
+    .razorpay-button:hover::after {
+      left: 100%;
+    }
+    
+    .razorpay-logo {
+      height: 24px;
+      width: auto;
+    }
+
+    /* Responsive Adjustments */
+    @media (max-width: 900px) {
+      .main-container {
+        flex-direction: column;
+        gap: 15px;
+        padding: 20px 15px;
+        overflow-y: auto;
+        height: auto;
+      }
+      
+      .payment-column, .camera-column {
+        max-width: 100%;
+      }
+      
+      h1 {
+        font-size: 1.7rem;
+      }
+      
+      h2 {
+        font-size: 1.2rem;
+        margin: 5px 0;
+      }
+      
+      .camera-container {
+        aspect-ratio: 16/9;
+        max-height: 200px;
+      }
+    }
+
+    /* Test mode indicator */
+    .test-mode-badge {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background-color: rgba(255, 255, 0, 0.3);
+      color: white;
+      padding: 5px 10px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      border: 1px solid rgba(255, 255, 0, 0.5);
+    }
+  </style>
+  <!-- Razorpay SDK -->
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+</head>
+<body>
+  <!-- Video Background -->
+  <video class="video-background" autoplay muted loop>
+    <source src="background.mp4" type="video/mp4">
+    Your browser does not support the video tag.
+  </video>
+
+  <!-- Overlay -->
+  <div class="overlay"></div>
+
+  <!-- Test Mode Badge -->
+  <div class="test-mode-badge">TEST MODE</div>
+
+  <!-- Main Container -->
+  <div class="main-container">
+    <!-- Left Column - Payment Details -->
+    <div class="payment-column">
+      <h1>Complete Payment</h1>
+      
+      <!-- Payment Details -->
+      <div class="payment-details">
+        <div class="detail-row">
+          <div class="detail-label">Device:</div>
+          <div class="detail-value" id="selectedConsole">PS5</div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-label">Duration:</div>
+          <div class="detail-value" id="selectedDuration">60 minutes</div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-label">Players:</div>
+          <div class="detail-value" id="selectedPlayers">1 Player</div>
+        </div>
+        <div class="detail-row total-row">
+          <div class="detail-label">Total Amount:</div>
+          <div class="detail-value" id="totalAmount">₹130</div>
+        </div>
+      </div>
+      
+      <h2>Select Payment Method</h2>
+      
+      <!-- Payment Methods - Cash and UPI -->
+      <div class="payment-methods">
+        <div class="payment-method" data-method="cash">
+          <img src="https://cdn-icons-png.flaticon.com/512/2489/2489756.png" alt="Cash">
+          <div class="payment-method-name">Cash</div>
+        </div>
+        <div class="payment-method" data-method="upi">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/e/e1/UPI-Logo-vector.svg" alt="UPI">
+          <div class="payment-method-name">UPI</div>
+        </div>
+      </div>
+      
+      <!-- UPI Payment Container (Hidden initially) -->
+      <div class="upi-container" id="upiContainer">
+        <h3>Pay via UPI</h3>
+        <p>Quick and secure payment through UPI QR Code</p>
+        <div class="upi-test-note">
+          <strong>Note:</strong> In test mode, scan the UPI QR code with any UPI app or use test UPI ID provided by Razorpay.
+        </div>
+        <button class="razorpay-button" id="upiPayBtn">
+          <img src="https://razorpay.com/assets/razorpay-glyph.svg" alt="Razorpay" class="razorpay-logo">
+          Show UPI QR Code
+        </button>
+      </div>
+      
+      <!-- Status Message -->
+      <div id="statusMessage" class="status-message info" style="display: none;"></div>
+      
+      <!-- Navigation Buttons -->
+      <div class="nav-buttons">
+        <button class="btn btn-gray" id="backBtn">Back</button>
+        <button class="btn btn-orange btn-disabled" id="payBtn" disabled>Pay Now</button>
+      </div>
+    </div>
+    
+    <!-- Right Column - Camera -->
+    <div class="camera-column">
+      <h2>Verification Photo</h2>
+      <p style="font-size: 0.9rem; margin-bottom: 10px;">Position your face in the frame for verification</p>
+      
+      <!-- Camera Section -->
+      <div class="camera-container">
+        <video id="cameraFeed" autoplay playsinline></video>
+        <canvas id="canvas"></canvas>
+        <div class="face-outline">
+          <p>Position your face here</p>
+        </div>
+        
+        <!-- Camera loading message -->
+        <div class="camera-overlay" id="cameraOverlay">
+          <div class="camera-message">
+            Camera activating... <div class="loading-spinner" style="display: inline-block;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Global variables
+    let stream = null;
+    let selectedPaymentMethod = null;
+    
+    // DOM elements
+    const cameraFeed = document.getElementById('cameraFeed');
+    const canvas = document.getElementById('canvas');
+    const cameraOverlay = document.getElementById('cameraOverlay');
+    const payBtn = document.getElementById('payBtn');
+    const backBtn = document.getElementById('backBtn');
+    const statusMessage = document.getElementById('statusMessage');
+    const paymentMethods = document.querySelectorAll('.payment-method');
+    const upiContainer = document.getElementById('upiContainer');
+    const upiPayBtn = document.getElementById('upiPayBtn');
+
+    // Razorpay test API key
+    const razorpayKey = 'rzp_test_Q09FbMo7iqjf4D';
+    
+    // Initialize payment details from local storage
+    function initPaymentDetails() {
+      // Get console information
+      const consoleName = localStorage.getItem('selectedConsole') || 'PS5';
+      
+      // Get duration information
+      const duration = localStorage.getItem('selectedDuration') || '60';
+      const durationMin = parseInt(duration);
+      
+      // Format duration display
+      let durationDisplay;
+      if (durationMin === 30) {
+        durationDisplay = "30 min";
+      } else if (durationMin === 60) {
+        durationDisplay = "1 hour";
+      } else if (durationMin === 90) {
+        durationDisplay = "1.5 hour";
+      } else if (durationMin === 120) {
+        durationDisplay = "2 hour";
+      } else {
+        durationDisplay = `${durationMin} minutes`;
+      }
+      
+      // Get player count
+      const players = localStorage.getItem('selectedControllers') || '1';
+      
+      // Get total price
+      const totalPrice = localStorage.getItem('totalPrice') || '130';
+
+      // Update UI
+      document.getElementById('selectedConsole').textContent = consoleName;
+      document.getElementById('selectedDuration').textContent = durationDisplay;
+      document.getElementById('selectedPlayers').textContent = `${players} Player${players > 1 ? 's' : ''}`;
+      document.getElementById('totalAmount').textContent = `₹${totalPrice}`;
+    }
+
+    // Auto-initialize camera as soon as the page loads
+    async function initCamera() {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { 
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+            facingMode: "user"
+          } 
+        });
+        
+        cameraFeed.srcObject = stream;
+        cameraOverlay.style.display = 'none';
+        
+        showStatusMessage('Camera activated. Select payment method to continue.', 'info');
+      } catch (err) {
+        console.error('Camera error:', err);
+        cameraOverlay.innerHTML = `
+          <div class="camera-message">
+            Camera error: ${err.message}<br>Please allow camera access to continue.
+          </div>
+        `;
+        showStatusMessage(`Camera error: ${err.message}. Please allow camera access.`, 'error');
+      }
+    }
+
+    // Improved capturePhoto function that actually returns the photo data
+    function capturePhoto() {
+      try {
+        const context = canvas.getContext('2d');
+        
+        // Make sure the video is ready
+        if (cameraFeed.videoWidth === 0 || cameraFeed.videoHeight === 0) {
+          return null; // Camera not ready yet
+        }
+        
+        // Set canvas dimensions
+        canvas.width = cameraFeed.videoWidth * 0.5;  // 50% of original size
+        canvas.height = cameraFeed.videoHeight * 0.5;
+        
+        // Draw the video frame to the canvas (and flip it horizontally)
+        context.translate(canvas.width, 0);
+        context.scale(-1, 1);
+        context.drawImage(cameraFeed, 0, 0, cameraFeed.videoWidth, cameraFeed.videoHeight, 
+                         0, 0, canvas.width, canvas.height);
+        
+        // Return the data URL of the image
+        return canvas.toDataURL('image/jpeg', 0.7);
+      } catch (err) {
+        console.error("Error capturing photo:", err);
+        return null;
+      }
+    }
+
+    // Add click event listeners to payment methods
+    document.querySelectorAll('.payment-method').forEach(method => {
+      method.onclick = function() {
+        // Remove selected class from all methods
+        document.querySelectorAll('.payment-method').forEach(m => {
+          m.classList.remove('selected');
+        });
+        
+        // Add selected class to this method
+        this.classList.add('selected');
+        
+        // Set the selected payment method
+        selectedPaymentMethod = this.getAttribute('data-method');
+        
+        // Show/hide UPI container based on selection
+        if (selectedPaymentMethod === 'upi') {
+          upiContainer.style.display = 'block';
+          payBtn.style.display = 'none'; // Hide the regular pay button for UPI
+        } else {
+          upiContainer.style.display = 'none';
+          payBtn.style.display = 'block'; // Show the regular pay button for cash
+        }
+        
+        // Enable the pay button if we have a camera stream
+        if (stream && stream.active) {
+          payBtn.disabled = false;
+          payBtn.classList.remove('btn-disabled');
+        }
+        
+        showStatusMessage(`Selected payment method: ${selectedPaymentMethod}`, 'info');
+      };
+    });
+    
+    // Initialize Razorpay UPI payment - OPTIMIZED FOR UPI QR CODE
+    upiPayBtn.addEventListener('click', function() {
+      if (!stream || !stream.active) {
+        showStatusMessage('Please enable your camera first.', 'error');
+        return;
+      }
+      
+      // Get payment amount
+      const amount = document.getElementById('totalAmount').textContent.replace('₹', '');
+      const amountInPaise = parseFloat(amount) * 100; // Razorpay expects amount in paise
+      
+      // Get other booking details
+      const consoleName = document.getElementById('selectedConsole').textContent;
+      const duration = document.getElementById('selectedDuration').textContent;
+      
+      // Capture photo first before proceeding with payment
+      const photoDataUrl = capturePhoto();
+      if (!photoDataUrl) {
+        showStatusMessage('Failed to capture verification photo. Please try again.', 'error');
+        return;
+      }
+      
+      // Store the photo data for later
+      const endTime = Date.now() + (parseInt(localStorage.getItem('selectedDuration')) * 60 * 1000);
+      const bookingId = `${consoleName}-${endTime}`;
+      
+      // Get existing photos or create new object
+      const photosJSON = localStorage.getItem('userPhotos') || '{}';
+      let photos;
+      try {
+        photos = JSON.parse(photosJSON);
+      } catch (e) {
+        photos = {};
+      }
+      
+      // Store the new photo with the booking ID as key
+      photos[bookingId] = photoDataUrl;
+      localStorage.setItem('userPhotos', JSON.stringify(photos));
+      
+      // CONFIGURATION OPTIMIZED FOR UPI QR CODE
+      const options = {
+        key: razorpayKey,
+        amount: amountInPaise,
+        currency: "INR",
+        name: "Gamespot Kiosk",
+        description: `${duration} on ${consoleName}`,
+        image: "https://via.placeholder.com/150/FF6F00/FFFFFF?text=GS",
+        prefill: {
+          name: "Azonix07",
+          contact: "9876543210",
+          email: "test@example.com"
+        },
+        theme: {
+          color: "#0048FF"
+        },
+        modal: {
+          ondismiss: function() {
+            showStatusMessage('Payment cancelled.', 'error');
+          },
+          escape: false, // Prevent closing with ESC key
+          animation: true // Enable animations
+        },
+        options: {
+          checkout: {
+            method: {
+              upi: {
+                flow: "qr" // Force QR code display for UPI
+              }
+            }
+          }
+        },
+        handler: function(response) {
+          // Handle successful payment
+          handleSuccessfulPayment(response, 'upi', amount);
+        }
+      };
+      
+      // Create a new instance of Razorpay
+      const razorpay = new Razorpay(options);
+      razorpay.open();
+      
+      // Show info message
+      showStatusMessage('UPI QR Code payment opened - scan with your UPI app', 'info');
+    });
+
+    // Handle payment - Store photo and simulate payment
+    payBtn.addEventListener('click', async () => {
+      if (!stream || !stream.active) {
+        showStatusMessage('Please enable your camera first.', 'error');
+        return;
+      }
+      
+      if (!selectedPaymentMethod) {
+        showStatusMessage('Please select a payment method first.', 'error');
+        return;
+      }
+      
+      // Disable button and show loading state
+      payBtn.disabled = true;
+      payBtn.innerHTML = 'Processing <div class="loading-spinner"></div>';
+      
+      try {
+        // Get payment details
+        const consoleName = document.getElementById('selectedConsole').textContent;
+        const durationText = document.getElementById('selectedDuration').textContent;
+        
+        // Extract number from duration text like "30 min" or "1 hour"
+        let durationMin;
+        if (durationText.includes('min')) {
+          durationMin = parseInt(durationText.match(/\d+/)[0]);
+        } else if (durationText.includes('hour')) {
+          if (durationText.includes('1.5')) {
+            durationMin = 90;
+          } else {
+            durationMin = parseInt(durationText.match(/\d+/)[0]) * 60;
+          }
+        } else {
+          throw new Error('Could not determine duration');
+        }
+        
+        const amount = document.getElementById('totalAmount').textContent.replace('₹', '');
+        
+        // Capture the photo for storage
+        const photoDataUrl = capturePhoto();
+        
+        console.log('Simulating payment:', {
+          console: consoleName,
+          minutes: durationMin,
+          method: selectedPaymentMethod,
+          amount: amount,
+          hasPhoto: !!photoDataUrl
+        });
+        
+        // Wait a bit to simulate processing
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        // Handle the successful payment
+        handleSuccessfulPayment(null, selectedPaymentMethod, amount);
+        
+      } catch (err) {
+        console.error('Payment error:', err);
+        showStatusMessage(`Payment error: ${err.message}. Please try again.`, 'error');
+        
+        // Reset button state
+        payBtn.innerHTML = 'Pay Now';
+        payBtn.disabled = false;
+      }
+    });
+
+    // Function to send power command to ESP32
+    async function sendPowerCommand(consoleName, action) {
+      try {
+        showStatusMessage(`Sending ${action} command to ${consoleName}...`, 'info');
+        
+        const response = await fetch('/api/power-control', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            console: consoleName,
+            action: action
+          })
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Unknown error');
+        }
+        
+        const result = await response.json();
+        console.log(`Power ${action} result:`, result);
+        showStatusMessage(`${consoleName} ${action === 'on' ? 'powered on' : 'powered off'} successfully`, 'success');
+        return true;
+      } catch (error) {
+        console.error(`Error sending power ${action} command to ${consoleName}:`, error);
+        showStatusMessage(`Note: Device power control failed, but booking will continue.`, 'info');
+        return false;
+      }
+    }
+
+    // UPDATED: Handle successful payment completion - Now includes API call to server and ESP32 power control
+    async function handleSuccessfulPayment(response, method, amount) {
+      try {
+        // Get payment details
+        const consoleName = document.getElementById('selectedConsole').textContent;
+        const durationText = document.getElementById('selectedDuration').textContent;
+        
+        // Extract number from duration text like "30 min" or "1 hour"
+        let durationMin;
+        if (durationText.includes('min')) {
+          durationMin = parseInt(durationText.match(/\d+/)[0]);
+        } else if (durationText.includes('hour')) {
+          if (durationText.includes('1.5')) {
+            durationMin = 90;
+          } else {
+            durationMin = parseInt(durationText.match(/\d+/)[0]) * 60;
+          }
+        } else {
+          durationMin = parseInt(localStorage.getItem('selectedDuration'));
+        }
+        
+        const players = localStorage.getItem('selectedControllers') || '1';
+        
+        // Calculate end time for booking
+        const endTime = Date.now() + (durationMin * 60 * 1000);
+        
+        // Get the photo data URL
+        const photoDataUrl = capturePhoto();
+        if (!photoDataUrl) {
+          console.warn("Failed to capture photo");
+        }
+        
+        // Create unique ID for this booking
+        const bookingId = `${consoleName}-${endTime}`;
+        
+        // Store the photo locally as before (for local usage)
+        const photosJSON = localStorage.getItem('userPhotos') || '{}';
+        let photos;
+        try {
+          photos = JSON.parse(photosJSON);
+        } catch (e) {
+          photos = {};
+        }
+        photos[bookingId] = photoDataUrl;
+        localStorage.setItem('userPhotos', JSON.stringify(photos));
+        
+        // Send power ON command to PS5 if applicable
+        let powerCommandSent = false;
+        if (consoleName.includes('PS5')) {
+          try {
+            powerCommandSent = await sendPowerCommand(consoleName, 'on');
+          } catch (powerErr) {
+            console.error(`Error sending power ON command to ${consoleName}:`, powerErr);
+          }
+        }
+        
+        // Send payment and photo data to backend API
+        try {
+          console.log("Sending payment data to server...");
+          showStatusMessage("Sending payment data to server...", "info");
+          
+          // Send payment and photo data to backend API
+          const apiResponse = await fetch('/api/pay', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              console: consoleName,
+              minutes: durationMin,
+              method: method,
+              photoData: photoDataUrl // Include the photo data in the API request
+            })
+          });
+          
+          if (!apiResponse.ok) {
+            const errorData = await apiResponse.json();
+            throw new Error(`Server error: ${errorData.error || 'Unknown error'}`);
+          }
+          
+          const result = await apiResponse.json();
+          console.log("Server payment response:", result);
+          showStatusMessage("Payment successfully recorded on server", "success");
+          
+        } catch (apiErr) {
+          console.error("API payment error:", apiErr);
+          showStatusMessage(`Server payment processing warning: ${apiErr.message}. Local booking will still work.`, "info");
+          // Continue with local booking even if server API fails
+        }
+        
+        // Store booking in the new multi-booking format
+        const newBooking = {
+          console: consoleName,
+          endTime: endTime,
+          minutes: durationMin,
+          method: method,
+          players: players,
+          amount: amount,
+          transactionId: response ? response.razorpay_payment_id : null
+        };
+        
+        // Use storage event to communicate between tabs
+        localStorage.setItem('newBooking', JSON.stringify(newBooking));
+        
+        // Also store directly in consoleBookings
+        const bookingsJSON = localStorage.getItem('consoleBookings') || '[]';
+        let bookings = JSON.parse(bookingsJSON);
+        
+        // Remove any existing booking for this console
+        bookings = bookings.filter(b => b.console !== consoleName);
+        
+        // Add the new booking
+        bookings.push(newBooking);
+        
+        // Save updated bookings
+        localStorage.setItem('consoleBookings', JSON.stringify(bookings));
+        
+        // Show success message
+        if (powerCommandSent) {
+          showStatusMessage('Payment successful! Your device is now powered on. Redirecting...', 'success');
+        } else {
+          showStatusMessage('Payment successful! Redirecting to main screen...', 'success');
+        }
+        
+        // Stop camera stream
+        if (stream) {
+          stream.getTracks().forEach(track => track.stop());
+        }
+        
+        // Redirect after a delay
+        setTimeout(() => {
+          window.location.href = 'index.html';
+        }, 2000);
+        
+      } catch (err) {
+        console.error('Payment processing error:', err);
+        showStatusMessage(`Payment processing error: ${err.message}. Please contact support.`, 'error');
+      }
+    }
+
+    // Back button handler
+    backBtn.addEventListener('click', () => {
+      // Stop camera stream if it's active
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+      
+      // Go back to duration selection
+      window.location.href = 'duration.html';
+    });
+
+    // Show status message
+    function showStatusMessage(message, type) {
+      statusMessage.textContent = message;
+      statusMessage.className = `status-message ${type}`;
+      statusMessage.style.display = 'block';
+      
+      // Hide after 5 seconds
+      setTimeout(() => {
+        statusMessage.style.display = 'none';
+      }, 5000);
+    }
+
+    // Initialize page
+    function init() {
+      // Store current date and time in a variable
+      const currentDateTime = "Current Date and Time (UTC - YYYY-MM-DD HH:MM:SS formatted): 2025-07-23 12:15:44";
+      const currentUser = "Current User's Login: Azonix07";
+      
+      initPaymentDetails();
+      // Automatically initialize the camera
+      initCamera();
+    }
+
+    // Start initialization when page loads
+    window.onload = init;
+  </script>
+</body>
+</html>

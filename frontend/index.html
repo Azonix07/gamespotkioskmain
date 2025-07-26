@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gamespot Kiosk</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* Global Styling */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    /* Body Styling */
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Poppins', 'Segoe UI', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      overflow: hidden;
+      text-align: center;
+      color: white;
+    }
+
+    /* Video Background */
+    .video-background {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: -1;
+      filter: brightness(0.8) contrast(1.1);
+    }
+
+    /* Overlay Styling */
+    .overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, rgba(0, 0, 0, 0.75) 0%, rgba(12, 12, 24, 0.9) 100%);
+      z-index: 0;
+    }
+
+    /* Main Container Styling */
+    .main-container {
+      z-index: 2;
+      position: relative;
+      width: 90%;
+      max-width: 1200px;
+      padding: 20px;
+      animation: containerFadeIn 0.8s ease-out;
+    }
+
+    @keyframes containerFadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Logo Styling */
+    .logo-container {
+      margin-bottom: 40px;
+      position: relative;
+    }
+
+    .logo-container img {
+      width: 280px;
+      filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
+      transition: transform 0.3s;
+    }
+
+    .logo-container img:hover {
+      transform: scale(1.02);
+    }
+
+    /* Heading Styling */
+    h1 {
+      color: rgb(255, 111, 0);
+      font-size: 3rem;
+      margin: 10px 0 30px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+      position: relative;
+      display: inline-block;
+    }
+
+    h1::after {
+      content: "";
+      position: absolute;
+      bottom: -10px;
+      left: 50%;
+      width: 100px;
+      height: 4px;
+      background: rgb(255, 111, 0);
+      transform: translateX(-50%);
+      border-radius: 2px;
+      box-shadow: 0 2px 4px rgba(255, 111, 0, 0.3);
+    }
+
+    /* Console Grid Styling - Updated for more style */
+    .console-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr); /* Exactly 3 columns for better alignment */
+      gap: 30px; /* More spacing */
+      max-width: 1100px;
+      margin: 20px auto 0;
+      padding: 20px;
+    }
+
+    .console-box {
+      background: rgba(30, 30, 47, 0.7);
+      border-radius: 20px; /* Rounded corners */
+      padding: 60px 30px; /* Much larger */
+      font-size: 1.6rem; /* Bigger text */
+      font-weight: 600;
+      color: white;
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      cursor: pointer;
+      text-align: center;
+      position: relative;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3), 
+                 inset 0 1px 1px rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(5px);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 250px; /* Fixed minimum height */
+    }
+
+    .console-logo {
+      width: 80px;
+      height: 80px;
+      margin-bottom: 15px;
+      transition: all 0.4s ease;
+      object-fit: contain; /* Ensure logo fits properly */
+      filter: brightness(0) invert(1); /* Make logos white */
+    }
+
+    .console-box:hover:not(.booked):not(.admin-use) .console-logo {
+      transform: scale(1.1);
+    }
+
+    .console-box .timer {
+      margin-top: 15px;
+      font-size: 1.2rem; /* Bigger timer */
+      color: rgb(255, 111, 0);
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.3);
+      padding: 6px 18px;
+      border-radius: 15px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .console-box:hover:not(.booked):not(.admin-use) {
+      transform: translateY(-10px);
+      background: linear-gradient(135deg, 
+                rgba(255, 111, 0, 0.8) 0%, 
+                rgba(255, 80, 0, 0.9) 100%);
+      box-shadow: 0 15px 30px rgba(255, 111, 0, 0.3),
+                 0 0 20px rgba(255, 111, 0, 0.2),
+                 inset 0 1px 1px rgba(255, 255, 255, 0.3);
+    }
+
+    .console-box::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      border-radius: 20px;
+      background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0));
+      pointer-events: none;
+    }
+
+    /* Regular booked console */
+    .booked {
+      background: rgba(20, 20, 35, 0.8);
+      color: #ff3333;
+      cursor: not-allowed;
+      box-shadow: 0 8px 20px rgba(255, 0, 0, 0.1), inset 0 0 5px rgba(255, 0, 0, 0.1);
+    }
+
+    .booked::after {
+      content: "IN USE";
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background: #ff3333;
+      color: white;
+      font-size: 0.8rem;
+      padding: 5px 10px;
+      border-radius: 10px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      box-shadow: 0 2px 8px rgba(255, 0, 0, 0.4);
+    }
+
+    .booked .console-logo {
+      filter: grayscale(1) opacity(0.6);
+    }
+    
+    /* Admin use console */
+    .admin-use {
+      background: rgba(70, 20, 100, 0.8);
+      color: white;
+      cursor: not-allowed;
+      box-shadow: 0 8px 20px rgba(148, 0, 255, 0.1), inset 0 0 5px rgba(148, 0, 255, 0.3);
+    }
+    
+    .admin-use::after {
+      content: "ADMIN USE";
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background: #9c27b0;
+      color: white;
+      font-size: 0.8rem;
+      padding: 5px 10px;
+      border-radius: 10px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      box-shadow: 0 2px 8px rgba(156, 39, 176, 0.5);
+    }
+    
+    .admin-use .console-logo {
+      filter: hue-rotate(270deg) brightness(1.2);
+    }
+
+    /* Header Buttons */
+    .header-buttons {
+      position: fixed;
+      top: 15px;
+      right: 15px;
+      display: flex;
+      gap: 15px;
+      z-index: 100;
+    }
+    
+    /* Admin Button - Position at top right */
+    .admin-button, .games-button {
+      background-color: rgb(255, 111, 0);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 20px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    }
+
+    .games-button {
+      background-color: #9C27B0;
+    }
+
+    .admin-button:hover, .games-button:hover {
+      background: linear-gradient(135deg, #ff6b00, #ff3300);
+      transform: translateY(-3px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+    }
+
+    .games-button:hover {
+      background: linear-gradient(135deg, #9C27B0, #7B1FA2);
+    }
+
+    .admin-button:active, .games-button:active {
+      transform: translateY(-1px);
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Initial animation for console boxes */
+    .initial-load {
+      opacity: 0;
+      animation: boxFadeIn 0.5s ease-out forwards;
+    }
+
+    @keyframes boxFadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Responsive Adjustments */
+    @media (max-width: 992px) {
+      .console-grid {
+        grid-template-columns: repeat(2, 1fr); /* 2 columns on medium screens */
+      }
+    }
+
+    @media (max-width: 768px) {
+      h1 {
+        font-size: 2.5rem;
+      }
+      
+      .console-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+        padding: 15px;
+      }
+      
+      .console-box {
+        padding: 40px 20px;
+        font-size: 1.4rem;
+        min-height: 200px;
+      }
+      
+      .console-logo {
+        width: 60px;
+        height: 60px;
+      }
+      
+      .header-buttons {
+        flex-direction: column;
+        top: 10px;
+        right: 10px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      h1 {
+        font-size: 2rem;
+        margin: 5px 0 20px;
+      }
+      
+      .console-grid {
+        grid-template-columns: 1fr; /* 1 column on very small screens */
+      }
+      
+      .console-logo {
+        width: 50px;
+        height: 50px;
+      }
+      
+      .main-container {
+        padding-top: 60px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Header Buttons -->
+  <div class="header-buttons">
+    <button class="games-button" onclick="viewGames()">View Games</button>
+    <button class="admin-button" onclick="goToAdmin()">Admin</button>
+  </div>
+
+  <!-- Video Background -->
+  <video class="video-background" autoplay muted loop>
+    <source src="background.mp4" type="video/mp4">
+    Your browser does not support the video tag.
+  </video>
+
+  <!-- Overlay -->
+  <div class="overlay"></div>
+
+  <!-- Main Container -->
+  <div class="main-container">
+    <!-- Logo -->
+    <div class="logo-container">
+      <img src="logo.png" alt="Gamespot Logo">
+    </div>
+
+    <!-- Heading -->
+    <h1>Book a Device Now</h1>
+
+    <!-- Console Grid -->
+    <div class="console-grid" id="consoleGrid">
+      <!-- Console Boxes Will Be Populated Dynamically -->
+    </div>
+  </div>
+
+  <script>
+    let initialLoad = true;
+    const API_URL = '/api';
+
+    // Console configurations with logos
+    const consoleConfigs = {
+      'PS5 #1': {
+        logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/00/PlayStation_logo.svg/2560px-PlayStation_logo.svg.png',
+        color: '#006FCD'
+      },
+      'PS5 #2': {
+        logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/00/PlayStation_logo.svg/2560px-PlayStation_logo.svg.png',
+        color: '#006FCD'
+      },
+      'PS5 #3': {
+        logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/00/PlayStation_logo.svg/2560px-PlayStation_logo.svg.png',
+        color: '#006FCD'
+      },
+      'PS5 #4': {
+        logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/00/PlayStation_logo.svg/2560px-PlayStation_logo.svg.png',
+        color: '#006FCD'
+      },
+      'Logitech G920': {
+        logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f9/Xbox_one_logo.svg/1200px-Xbox_one_logo.svg.png',
+        color: '#107C10'
+      }
+    };
+
+    // Get local bookings from localStorage
+    function getLocalBookings() {
+      const bookingsJSON = localStorage.getItem('consoleBookings');
+      if (!bookingsJSON) {
+        return [];
+      }
+      
+      try {
+        // Filter out expired bookings, but keep admin-controlled ones
+        const bookings = JSON.parse(bookingsJSON);
+        const currentTime = Date.now();
+        return bookings.filter(booking => booking.adminControl || booking.endTime > currentTime);
+      } catch (e) {
+        console.error('Error parsing local bookings:', e);
+        return [];
+      }
+    }
+
+    async function fetchConsoles() {
+      try {
+        const response = await fetch(`${API_URL}/api/status`);
+        if (!response.ok) {
+          console.error('Failed to fetch consoles:', response.status);
+          // Fallback to hardcoded consoles if API fails
+          return [
+            { name: 'PS5 #1', booked: false },
+            { name: 'PS5 #2', booked: false },
+            { name: 'PS5 #3', booked: false },
+            { name: 'PS5 #4', booked: false },
+            { name: 'Logitech G920', booked: false }
+          ];
+        }
+        
+        // If the API returns data, check for our specific console set
+        const apiConsoles = await response.json();
+        
+        // Our expected consoles
+        const expectedConsoles = [
+          'PS5 #1', 'PS5 #2', 'PS5 #3', 'PS5 #4', 'Logitech G920'
+        ];
+        
+        // Create a map of existing consoles from API
+        const existingConsoles = {};
+        apiConsoles.forEach(c => {
+          existingConsoles[c.name] = c;
+        });
+        
+        // Return a list with all our expected consoles, using API data where available
+        return expectedConsoles.map(name => {
+          if (existingConsoles[name]) {
+            return existingConsoles[name];
+          }
+          return { name, booked: false };
+        });
+      } catch (error) {
+        console.error('Error fetching consoles:', error);
+        // Fallback to hardcoded consoles if API fails
+        return [
+          { name: 'PS5 #1', booked: false },
+          { name: 'PS5 #2', booked: false },
+          { name: 'PS5 #3', booked: false },
+          { name: 'PS5 #4', booked: false },
+          { name: 'Logitech G920', booked: false }
+        ];
+      }
+    }
+
+    // Merge server data with local booking data
+    function mergeWithLocalBookings(consoles) {
+      // Clean up expired bookings first
+      const bookings = getLocalBookings();
+      
+      if (bookings.length === 0) {
+        return consoles; // No local bookings
+      }
+      
+      const currentTime = Date.now();
+      
+      // Create a map for faster lookups
+      const bookingMap = {};
+      bookings.forEach(booking => {
+        bookingMap[booking.console] = booking;
+      });
+      
+      // Create a new array with locally booked consoles updated
+      return consoles.map(console => {
+        const localBooking = bookingMap[console.name];
+        
+        if (localBooking) {
+          // Check if it's an admin-controlled device
+          if (localBooking.adminControl) {
+            return {
+              ...console,
+              booked: true,
+              adminControl: true,
+              remainingTime: null  // No timer for admin-controlled devices
+            };
+          } else {
+            // Regular booking with timer
+            const remainingTime = localBooking.endTime - currentTime;
+            
+            return {
+              ...console,
+              booked: true,
+              remainingTime: remainingTime
+            };
+          }
+        }
+        return console;
+      });
+    }
+
+    function loadConsoles(consoles) {
+      // Enhance consoles with local booking info if needed
+      const mergedConsoles = mergeWithLocalBookings(consoles);
+      
+      const grid = document.getElementById('consoleGrid');
+      grid.innerHTML = ''; // Clear previous content to avoid duplicate buttons
+
+      mergedConsoles.forEach(({ name, booked, remainingTime, adminControl }, index) => {
+        const box = document.createElement('div');
+        box.className = 'console-box';
+        
+        // Only add animation class on initial load
+        if (initialLoad) {
+          box.classList.add('initial-load');
+          box.style.animationDelay = `${index * 0.1}s`;
+        }
+        
+        // Add console-specific styling if available
+        const config = consoleConfigs[name] || { 
+          logo: 'https://cdn-icons-png.flaticon.com/512/686/686589.png',
+          color: 'rgb(255, 111, 0)'
+        };
+        
+        // Create logo element
+        const logoImg = document.createElement('img');
+        logoImg.src = config.logo;
+        logoImg.alt = `${name} logo`;
+        logoImg.className = 'console-logo';
+        
+        // Create name element
+        const nameElem = document.createElement('div');
+        nameElem.textContent = name;
+        nameElem.style.marginTop = '15px';
+        
+        // Add logo and name to box
+        box.appendChild(logoImg);
+        box.appendChild(nameElem);
+        
+        if (booked) {
+          if (adminControl) {
+            // Admin-controlled device styling
+            box.classList.add('admin-use');
+            
+            const statusElem = document.createElement('div');
+            statusElem.className = 'timer';
+            statusElem.textContent = 'Admin Use';
+            statusElem.style.background = '#9c27b0';
+            
+            box.appendChild(statusElem);
+          } else {
+            // Regular booked styling with timer
+            box.classList.add('booked');
+            const mins = Math.floor(remainingTime / 60000);
+            const secs = Math.floor((remainingTime % 60000) / 1000);
+            
+            const timerElem = document.createElement('div');
+            timerElem.className = 'timer';
+            timerElem.textContent = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+            
+            box.appendChild(timerElem);
+          }
+        } else {
+          box.onclick = () => selectConsole(name);
+        }
+
+        grid.appendChild(box);
+      });
+      
+      // Set initialLoad to false after first load
+      if (initialLoad) {
+        initialLoad = false;
+      }
+    }
+
+    async function initialize() {
+      // Fetch and display consoles
+      const consoles = await fetchConsoles();
+      loadConsoles(consoles);
+
+      // Update remaining time every second without duplicating buttons
+      setInterval(async () => {
+        const updatedConsoles = await fetchConsoles();
+        loadConsoles(updatedConsoles);
+      }, 1000);
+    }
+
+    function selectConsole(name) {
+      localStorage.setItem('selectedConsole', name);
+      window.location.href = 'duration.html'; // Redirect to duration selection
+    }
+
+    function goToAdmin() {
+      window.location.href = 'admin.html'; // Redirect to admin page
+    }
+    
+    function viewGames() {
+      window.location.href = 'games.html'; // Redirect to games page
+    }
+
+    // Start the initialization
+    initialize();
+  </script>
+</body>
+</html>
