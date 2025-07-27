@@ -4,8 +4,7 @@
   "description": "GameSpot Kiosk Application",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "postinstall": "cd backend && npm rebuild sqlite3 --build-from-source"
+    "start": "node server.js"
   },
   "engines": {
     "node": ">=16.x"
