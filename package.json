@@ -1,0 +1,12 @@
+{
+  "name": "gamespot-kiosk",
+  "version": "1.0.0",
+  "description": "GameSpot Kiosk Application",
+  "main": "backend/index.js",
+  "scripts": {
+    "start": "node backend/index.js"
+  },
+  "engines": {
+    "node": ">=16.x"
+  }
+}
