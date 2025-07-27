@@ -10,9 +10,8 @@ console.log = console.log || ((...args) => process.stdout.write(args.join(' ') +
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const DB_PATH = process.env.RAILWAY_VOLUME_MOUNT_PATH 
-  ? `${process.env.RAILWAY_VOLUME_MOUNT_PATH}/gamespot.db` 
-  : path.resolve(__dirname, 'gamespot.db');
+const dbPath = process.env.DB_PATH || path.resolve(__dirname, 'gamespot.db');
+console.log(`Using database at path: ${dbPath}`);
 
 
 const dbPath = DB_PATH;
