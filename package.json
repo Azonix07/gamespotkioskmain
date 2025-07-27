@@ -2,11 +2,15 @@
   "name": "gamespot-kiosk",
   "version": "1.0.0",
   "description": "GameSpot Kiosk Application",
-  "main": "backend/index.js",
+  "main": "server.js",
   "scripts": {
-    "start": "node backend/index.js"
+    "start": "node server.js"
   },
   "engines": {
     "node": ">=16.x"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5"
   }
 }
