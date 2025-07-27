@@ -1,2 +1,5 @@
 [phases.setup]
-nixPkgs = ["python3", "gcc", "nodejs", "build-essential", "python-is-python3"]
+nixPkgs = ["python3", "gcc", "build-essential", "python-is-python3"]
+
+[phases.build]
+cmds = ["npm install", "cd backend && npm rebuild sqlite3 --build-from-source"]
