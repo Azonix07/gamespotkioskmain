@@ -1,0 +1,2 @@
+[phases.setup]
+nixPkgs = ["python3", "gcc", "nodejs", "build-essential", "python-is-python3"]
