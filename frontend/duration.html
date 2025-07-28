@@ -39,16 +39,30 @@
       display: flex;
       flex-direction: column;
       position: relative;
+      overflow: hidden; /* Prevent scrolling within main container */
+    }
+
+    /* Content Wrapper - Added to enable scrolling when needed */
+    .content-wrapper {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      overflow-y: auto; /* Allow vertical scrolling */
+      margin-bottom: 80px; /* Space for bottom button */
+      padding-bottom: 20px;
+      -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
     }
 
     /* Logo Styling */
     .logo-container {
       margin-bottom: 15px;
-      margin-top: 40px;
+      margin-top: 20px; /* Reduced from 40px */
+      flex-shrink: 0;
     }
 
     .logo-container img {
-      height: 60px;
+      height: 50px; /* Reduced from 60px */
       object-fit: contain;
     }
 
@@ -83,8 +97,6 @@
       position: relative;
       transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
       width: 100%;
-      flex: 1;
-      margin-top: 20px;
       align-items: center;
       justify-content: center;
     }
@@ -119,12 +131,12 @@
       background: linear-gradient(145deg, #1e1e2f, #252540);
       border: 2px solid rgba(255, 111, 0, 0.6);
       border-radius: 15px;
-      padding: 30px 20px;
+      padding: 25px 15px; /* Reduced padding */
       cursor: pointer;
       text-align: center;
       transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
       position: relative;
-      min-height: 160px;
+      min-height: 140px; /* Reduced height */
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -148,13 +160,13 @@
     }
 
     .duration-time {
-      font-size: 2rem;
+      font-size: 1.8rem; /* Reduced size */
       font-weight: 700;
       color: white;
     }
 
     .duration-price {
-      font-size: 2rem;
+      font-size: 1.8rem; /* Reduced size */
       font-weight: 700;
       color: rgb(255, 111, 0);
       transition: color 0.3s ease;
@@ -166,7 +178,7 @@
     }
 
     .price-details {
-      font-size: 1rem;
+      font-size: 0.9rem;
       opacity: 0.8;
       margin-top: 8px;
     }
@@ -196,24 +208,24 @@
       display: flex;
       justify-content: center;
       gap: 20px;
-      padding-top: 20px;
+      padding-top: 15px; /* Reduced padding */
       border-top: 1px solid rgba(255, 255, 255, 0.2);
-      margin-top: 15px;
+      margin-top: 10px;
     }
 
-    /* Controller buttons - FIXED HIGHLIGHT COLOR */
+    /* Controller buttons */
     .controller-option {
       background: rgba(20, 20, 35, 0.7);
       border: 1px solid rgba(255, 255, 255, 0.3);
       border-radius: 10px;
-      padding: 10px 0;
-      width: 55px;
-      height: 50px;
+      padding: 8px 0; /* Reduced padding */
+      width: 50px;
+      height: 45px;
       cursor: pointer;
       text-align: center;
       transition: all 0.2s ease;
       font-weight: 600;
-      font-size: 1.3rem;
+      font-size: 1.2rem;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -266,7 +278,7 @@
       background: rgba(30, 30, 47, 0.7);
       padding: 20px;
       border-radius: 10px;
-      margin: 0 auto 25px;
+      margin: 0 auto 20px; /* Reduced margin */
       text-align: left;
       border: 1px solid rgba(255, 111, 0, 0.3);
       width: 100%;
@@ -308,8 +320,8 @@
     /* Back Button - In fixed position */
     .back-button {
       position: fixed;
-      bottom: 30px;
-      left: 30px;
+      bottom: 20px;
+      left: 20px;
       padding: 12px 30px;
       font-size: 1.2rem;
       color: white;
@@ -319,7 +331,7 @@
       cursor: pointer;
       transition: all 0.3s ease;
       font-weight: 600;
-      z-index: 50;
+      z-index: 200; /* Higher z-index to ensure visibility */
       box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
       opacity: 1;
     }
@@ -386,7 +398,7 @@
     /* Galaxy A7 Tablet Specific Styles */
     @media (max-width: 1024px) {
       .selections-container.shifted {
-        transform: translateX(-10%); /* Even smaller shift on tablet */
+        transform: translateX(-5%); /* Minimal shift on tablet */
       }
       
       .summary-container {
@@ -402,7 +414,7 @@
         box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.3);
         border-top: 2px solid rgba(255, 111, 0, 0.6);
         z-index: 1000;
-        padding-bottom: 30px;
+        padding-bottom: 20px;
       }
       
       .summary-container.visible {
@@ -418,52 +430,34 @@
       .summary-buttons {
         max-width: 500px;
       }
-    }
-
-    /* Responsive Adjustments for Galaxy A7 and other tablets */
-    @media (max-width: 1280px) and (min-width: 768px) {
+      
       .duration-box {
-        padding: 25px 15px;
+        min-height: 130px; /* Even smaller height for tablets */
       }
       
-      .duration-time {
-        font-size: 1.7rem;
-      }
-      
-      .duration-price {
-        font-size: 1.7rem;
-      }
-      
-      .controller-option {
-        width: 50px;
-        height: 45px;
-        font-size: 1.2rem;
-      }
-      
-      .summary-back, .continue-button {
-        padding: 10px 20px;
-        font-size: 1.1rem;
+      /* Ensure scrolling works properly on tablets */
+      .content-wrapper {
+        margin-bottom: 70px; /* Smaller margin on tablets */
       }
     }
 
-    /* Tablet and Mobile Adjustments */
-    @media (max-width: 768px) {
-      .duration-options {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 15px;
+    /* Specific Galaxy A7 Adjustments */
+    @media (min-width: 768px) and (max-width: 1280px) {
+      .logo-container {
+        margin-top: 10px;
+        margin-bottom: 10px;
       }
       
       .duration-box {
         padding: 20px 15px;
-        min-height: 140px;
       }
       
       .duration-time {
-        font-size: 1.4rem;
+        font-size: 1.6rem;
       }
       
       .duration-price {
-        font-size: 1.4rem;
+        font-size: 1.6rem;
       }
       
       .controller-option {
@@ -472,9 +466,58 @@
         font-size: 1.1rem;
       }
       
+      .summary-back, .continue-button {
+        padding: 10px 20px;
+        font-size: 1.1rem;
+      }
+      
+      h1 {
+        font-size: 1.8rem;
+        margin-bottom: 10px;
+      }
+      
+      .selected-console {
+        margin-bottom: 15px;
+      }
+      
+      /* Adjust bottom row position on Galaxy A7 */
       .back-button {
-        bottom: 20px;
-        left: 20px;
+        bottom: 15px;
+        left: 15px;
+        padding: 10px 20px;
+        font-size: 1.1rem;
+      }
+    }
+
+    /* Smaller tablets and phones */
+    @media (max-width: 768px) {
+      .duration-options {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+      }
+      
+      .duration-box {
+        padding: 18px 10px;
+        min-height: 120px;
+      }
+      
+      .duration-time {
+        font-size: 1.4rem;
+      }
+      
+      .duration-price {
+        font-size: 1.4rem;
+      }
+      
+      .controller-option {
+        width: 40px;
+        height: 35px;
+        font-size: 1rem;
+      }
+      
+      .back-button {
+        bottom: 15px;
+        left: 15px;
         font-size: 1rem;
         padding: 10px 20px;
       }
@@ -493,22 +536,23 @@
       }
       
       h1 {
-        font-size: 1.7rem;
+        font-size: 1.5rem;
       }
       
       .logo-container img {
-        height: 45px;
+        height: 40px;
       }
       
       .selections-container.shifted {
-        transform: translateX(-5%); /* Even smaller shift on phones */
+        transform: translateX(0); /* No shift on phones */
       }
     }
   </style>
 </head>
 <body>
   <div class="main-container">
-    <div>
+    <!-- Added content wrapper for scrolling -->
+    <div class="content-wrapper">
       <div class="logo-container">
         <img src="logo.png" alt="Gamespot Logo">
       </div>
@@ -517,13 +561,13 @@
       <div class="selected-console">
         You selected: <strong id="consoleName">Loading...</strong>
       </div>
-    </div>
     
-    <!-- This container will slide left when player count is selected -->
-    <div class="selections-container" id="selectionsContainer">
-      <div class="duration-container">
-        <div class="duration-options" id="durationOptions">
-          <!-- Duration options will be populated by JavaScript -->
+      <!-- This container will slide left when player count is selected -->
+      <div class="selections-container" id="selectionsContainer">
+        <div class="duration-container">
+          <div class="duration-options" id="durationOptions">
+            <!-- Duration options will be populated by JavaScript -->
+          </div>
         </div>
       </div>
     </div>
@@ -688,6 +732,12 @@
               option.classList.remove('selected');
             }
           });
+          
+          // Scroll to ensure the selected box is visible, especially for bottom row
+          setTimeout(() => {
+            ensureElementInView(box);
+          }, 100);
+          
         } else {
           box.classList.remove('selected');
           
@@ -711,6 +761,23 @@
         
         document.getElementById('fixedBackButton').classList.add('faded');
       }, 200);
+    }
+    
+    // Helper function to ensure element is visible in view
+    function ensureElementInView(element) {
+      const contentWrapper = document.querySelector('.content-wrapper');
+      const elementRect = element.getBoundingClientRect();
+      const wrapperRect = contentWrapper.getBoundingClientRect();
+      
+      // Check if element is below the viewport bottom
+      if (elementRect.bottom > wrapperRect.bottom) {
+        contentWrapper.scrollTop += (elementRect.bottom - wrapperRect.bottom + 50);
+      }
+      
+      // Check if element is above the viewport top
+      if (elementRect.top < wrapperRect.top) {
+        contentWrapper.scrollTop -= (wrapperRect.top - elementRect.top + 50);
+      }
     }
 
     // Select number of controllers
@@ -740,6 +807,9 @@
       
       // Update price summary
       updateSummary();
+      
+      // Make sure everything stays visible when changing controllers
+      ensureElementInView(selectedBox);
     }
 
     // Update price summary based on selected duration and controllers
