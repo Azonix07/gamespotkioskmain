@@ -14,12 +14,11 @@ const PORT = process.env.PORT || 3000;
 const dbPath = process.env.DB_PATH || path.resolve(__dirname, 'gamespot.db');
 console.log(`Using database at path: ${dbPath}`);
 
-// Updated ESP32 configuration with correct endpoints for 3-second press
+// Simplified direct ESP32 configuration - FIXED for reliable operation
 const ESP32_CONFIG = {
   'PS5 #4': {
     ip: '192.168.1.212',
-    onEndpoint: '/press?duration=750',     // 750ms for power ON
-    offEndpoint: '/press?duration=3000',   // 3000ms (3 seconds) for power OFF
+    // No longer using separate endpoints, just using /press with duration
     statusEndpoint: '/status'
   }
 };
@@ -360,10 +359,25 @@ function processPayment(console, minutes, method, photoData, res) {
           let powerOnResult = null;
           if (console === 'PS5 #4' && ESP32_CONFIG[console]) {
             try {
-              powerOnResult = await sendPowerCommandToESP32(console, 'on');
-              console.log(`Real power ON command sent to ${console} - Result: ${JSON.stringify(powerOnResult)}`);
+              // ENHANCED: Try multiple times to power on PS5 with different durations if needed
+              console.log(`Attempting to power on ${console} with multiple strategies...`);
+              
+              // First attempt - standard 750ms press
+              console.log(`First attempt: Standard 750ms press`);
+              powerOnResult = await sendPowerCommandToESP32(console, 'on', 750);
+              console.log(`First attempt result:`, powerOnResult);
+              
+              // If first attempt failed or no response, try with 500ms (sometimes works better)
+              if (!powerOnResult || !powerOnResult.success) {
+                console.log(`Second attempt: Alternate 500ms press after 1 second delay`);
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                powerOnResult = await sendPowerCommandToESP32(console, 'on', 500);
+                console.log(`Second attempt result:`, powerOnResult);
+              }
+              
+              console.log(`Power ON sequence completed for ${console}`);
             } catch (error) {
-              console.error(`Error sending real power ON command to ${console}:`, error.message);
+              console.error(`Error sending power ON command to ${console}:`, error.message);
               powerOnResult = { success: false, error: error.message };
             }
           } else if (console.includes('PS5')) {
@@ -390,31 +404,44 @@ function processPayment(console, minutes, method, photoData, res) {
   }
 }
 
-// Updated function to send actual power commands to ESP32 relay
-async function sendPowerCommandToESP32(consoleName, action) {
+// FIXED: Improved function to send power commands with explicit duration
+async function sendPowerCommandToESP32(consoleName, action, customDuration = null) {
   if (!ESP32_CONFIG[consoleName]) {
     throw new Error(`No ESP32 configuration found for ${consoleName}`);
   }
   
   const config = ESP32_CONFIG[consoleName];
-  const endpoint = action === 'on' ? config.onEndpoint : config.offEndpoint;
-  const url = `http://${config.ip}${endpoint}`;
+  
+  // Set appropriate durations for each action
+  let duration;
+  if (customDuration !== null) {
+    duration = customDuration; // Use custom duration if provided
+  } else {
+    duration = action === 'on' ? 750 : 3000; // Default: 750ms for ON, 3000ms for OFF
+  }
+  
+  // Build the URL with the duration parameter
+  const url = `http://${config.ip}/press?duration=${duration}`;
   
   try {
-    console.log(`Sending ${action} command to ${consoleName} at ${url}`);
+    console.log(`Sending ${action} command to ${consoleName} with ${duration}ms press at ${url}`);
+    
     const response = await axios.get(url, { 
-      timeout: action === 'off' ? 8000 : 5000 // Longer timeout for OFF command (3s press)
+      timeout: duration + 3000 // Timeout: longer than press duration + buffer
     });
+    
+    console.log(`Command to ${consoleName} completed with status: ${response.status}`);
     
     return {
       success: true,
-      message: `${consoleName} power ${action} command sent successfully`,
+      message: `${consoleName} power ${action} command sent successfully with ${duration}ms press`,
       status: response.status,
-      data: response.data
+      data: response.data,
+      duration: duration
     };
   } catch (error) {
     console.error(`Error sending power command to ESP32 for ${consoleName}:`, error.message);
-    throw new Error(`Failed to send ${action} command: ${error.message}`);
+    throw new Error(`Failed to send ${action} command with ${duration}ms press: ${error.message}`);
   }
 }
 
@@ -432,10 +459,12 @@ app.post('/api/power-control', async (req, res) => {
   if (console === 'PS5 #4' && ESP32_CONFIG[console]) {
     try {
       console.log(`Using real ESP32 for ${console} power ${action} command`);
-      const result = await sendPowerCommandToESP32(console, action);
+      const duration = action === 'on' ? 750 : 3000;
+      const result = await sendPowerCommandToESP32(console, action, duration);
+      
       return res.json({
         success: true,
-        message: `${console} power ${action} command sent successfully`,
+        message: `${console} power ${action} command sent successfully with ${duration}ms press`,
         result: result,
         testMode: false,
         timestamp: new Date().toISOString()
@@ -579,7 +608,7 @@ app.post('/api/reset', async (req, res) => {
       let ps5_4_result = null;
       try {
         if (ESP32_CONFIG['PS5 #4']) {
-          ps5_4_result = await sendPowerCommandToESP32('PS5 #4', 'off');
+          ps5_4_result = await sendPowerCommandToESP32('PS5 #4', 'off', 3000);
           console.log(`Real power OFF command sent to PS5 #4 - Result: ${JSON.stringify(ps5_4_result)}`);
         }
       } catch (error) {
@@ -631,7 +660,7 @@ app.post('/api/reset-single', async (req, res) => {
         // Send real power OFF command for PS5 #4
         if (consoleName === 'PS5 #4' && ESP32_CONFIG[consoleName]) {
           try {
-            const result = await sendPowerCommandToESP32(consoleName, 'off');
+            const result = await sendPowerCommandToESP32(consoleName, 'off', 3000);
             console.log(`Real power OFF command sent to ${consoleName} - Result: ${JSON.stringify(result)}`);
             
             return res.json({
@@ -716,6 +745,29 @@ app.get('/api/esp32-status', async (req, res) => {
   });
 });
 
+// Special direct endpoint for easy testing
+app.get('/api/direct-press', async (req, res) => {
+  const { duration = 750 } = req.query;
+  const url = `http://${ESP32_CONFIG['PS5 #4'].ip}/press?duration=${duration}`;
+  
+  try {
+    console.log(`Sending direct press command with duration ${duration}ms to ${url}`);
+    const response = await axios.get(url, { timeout: parseInt(duration) + 2000 });
+    res.json({
+      success: true,
+      message: `Direct press command sent with ${duration}ms duration`,
+      status: response.status,
+      data: response.data
+    });
+  } catch (error) {
+    console.error(`Error sending direct press command:`, error.message);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
 // Start the server on localhost
 app.listen(PORT, '0.0.0.0', () => {
   // Updated timestamp
@@ -725,8 +777,11 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Backend API server running on port ${PORT}`);
   console.log(`API endpoints available at http://localhost:${PORT}/api`);
   console.log(`🎮 Real ESP32 integration enabled for PS5 #4 at ${ESP32_CONFIG['PS5 #4'].ip}`);
-  console.log(`🎮 Power ON: Using 750ms button press`);
+  console.log(`🎮 Power ON: Using 750ms button press with fallback to 500ms`);
   console.log(`🎮 Power OFF: Using 3000ms (3s) button press`);
   console.log(`🧪 Other PS5s running in TEST MODE (no actual ESP32 connections will be made)`);
   console.log(`💻 Server configured for local development`);
+  
+  // Create direct test URL for easy access
+  console.log(`⚡ Quick test URL: http://localhost:${PORT}/api/direct-press?duration=750`);
 });
