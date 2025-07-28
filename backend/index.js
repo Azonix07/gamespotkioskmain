@@ -14,12 +14,12 @@ const PORT = process.env.PORT || 3000;
 const dbPath = process.env.DB_PATH || path.resolve(__dirname, 'gamespot.db');
 console.log(`Using database at path: ${dbPath}`);
 
-// ESP32 configuration
+// Updated ESP32 configuration with correct endpoints for 3-second press
 const ESP32_CONFIG = {
   'PS5 #4': {
     ip: '192.168.1.212',
-    onEndpoint: '/relay/on',
-    offEndpoint: '/relay/off',
+    onEndpoint: '/press?duration=750',     // 750ms for power ON
+    offEndpoint: '/press?duration=3000',   // 3000ms (3 seconds) for power OFF
     statusEndpoint: '/status'
   }
 };
@@ -390,7 +390,7 @@ function processPayment(console, minutes, method, photoData, res) {
   }
 }
 
-// New function to send actual power commands to ESP32 relay
+// Updated function to send actual power commands to ESP32 relay
 async function sendPowerCommandToESP32(consoleName, action) {
   if (!ESP32_CONFIG[consoleName]) {
     throw new Error(`No ESP32 configuration found for ${consoleName}`);
@@ -402,7 +402,10 @@ async function sendPowerCommandToESP32(consoleName, action) {
   
   try {
     console.log(`Sending ${action} command to ${consoleName} at ${url}`);
-    const response = await axios.get(url, { timeout: 5000 });
+    const response = await axios.get(url, { 
+      timeout: action === 'off' ? 8000 : 5000 // Longer timeout for OFF command (3s press)
+    });
+    
     return {
       success: true,
       message: `${consoleName} power ${action} command sent successfully`,
@@ -423,21 +426,27 @@ app.post('/api/power-control', async (req, res) => {
     return res.status(400).json({ error: 'Invalid request. Required: console name and action (on/off)' });
   }
   
+  console.log(`Received power ${action} request for ${console}`);
+  
   // Check if this console has a real ESP32 controller
   if (console === 'PS5 #4' && ESP32_CONFIG[console]) {
     try {
+      console.log(`Using real ESP32 for ${console} power ${action} command`);
       const result = await sendPowerCommandToESP32(console, action);
       return res.json({
         success: true,
         message: `${console} power ${action} command sent successfully`,
         result: result,
-        testMode: false
+        testMode: false,
+        timestamp: new Date().toISOString()
       });
     } catch (error) {
+      console.error(`Error in power-control API for ${console}:`, error.message);
       return res.status(500).json({
         success: false,
         error: error.message,
-        testMode: false
+        testMode: false,
+        timestamp: new Date().toISOString()
       });
     }
   }
@@ -450,7 +459,8 @@ app.post('/api/power-control', async (req, res) => {
     res.json({ 
       success: true, 
       message: `${console} power ${action} command simulated successfully`, 
-      testMode: true
+      testMode: true,
+      timestamp: new Date().toISOString()
     });
   }, 500);
 });
@@ -715,6 +725,8 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Backend API server running on port ${PORT}`);
   console.log(`API endpoints available at http://localhost:${PORT}/api`);
   console.log(`🎮 Real ESP32 integration enabled for PS5 #4 at ${ESP32_CONFIG['PS5 #4'].ip}`);
+  console.log(`🎮 Power ON: Using 750ms button press`);
+  console.log(`🎮 Power OFF: Using 3000ms (3s) button press`);
   console.log(`🧪 Other PS5s running in TEST MODE (no actual ESP32 connections will be made)`);
   console.log(`💻 Server configured for local development`);
 });
