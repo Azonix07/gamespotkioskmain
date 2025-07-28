@@ -5,7 +5,9 @@
     "http-proxy": "^1.18.1",
     "multer": "^2.0.1",
     "sqlite3": "^5.1.7",
-    "uuid": "^11.1.0"
+    "uuid": "^11.1.0",
+    "axios": "^1.6.0"
+
   },
   "scripts": {
     "start": "node index.js"
