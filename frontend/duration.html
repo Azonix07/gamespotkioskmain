@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Choose Duration</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,15 +13,7 @@
       margin: 0;
       padding: 0;
       box-sizing: border-box;
-      -webkit-tap-highlight-color: transparent; /* Remove tap highlight */
-      user-select: none; /* Prevent text selection */
-    }
-
-    html, body {
-      height: 100%;
-      width: 100%;
-      overflow: hidden;
-      position: relative;
+      -webkit-tap-highlight-color: transparent;
     }
 
     body {
@@ -32,60 +24,27 @@
       background: linear-gradient(135deg, #121212, #1e1e2f);
       color: white;
       display: flex;
-      flex-direction: column;
-    }
-
-    /* Header Bar */
-    .header-bar {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      background-color: rgba(20, 20, 35, 0.95);
-      color: white;
-      padding: 8px 15px;
-      display: flex;
-      justify-content: space-between;
       align-items: center;
-      font-size: 0.8rem;
-      z-index: 100;
-      border-bottom: 1px solid rgb(255, 111, 0);
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+      justify-content: center;
+      overflow: hidden;
     }
 
-    .info-pill {
-      background: rgba(30, 30, 47, 0.7);
-      padding: 5px 10px;
-      border-radius: 4px;
-      font-weight: 500;
-      border: 1px solid rgba(255, 111, 0, 0.3);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      max-width: 45%;
-    }
-    
     /* Main Container */
     .main-container {
       width: 100%;
-      height: 100%;
+      max-width: 1200px;
+      height: 100vh;
+      padding: 20px;
+      text-align: center;
       display: flex;
       flex-direction: column;
-      padding: 0;
       position: relative;
-      overflow: hidden;
-    }
-
-    /* Top Section */
-    .top-section {
-      padding: 30px 20px 20px;
-      text-align: center;
-      flex: 0 0 auto;
     }
 
     /* Logo Styling */
     .logo-container {
       margin-bottom: 15px;
+      margin-top: 40px;
     }
 
     .logo-container img {
@@ -106,7 +65,7 @@
       background-color: rgba(30, 30, 47, 0.7);
       padding: 6px 12px;
       border-radius: 8px;
-      margin-bottom: 15px;
+      margin-bottom: 20px;
       font-size: 1rem;
       display: inline-block;
       border: 1px solid rgba(255, 111, 0, 0.3);
@@ -117,34 +76,40 @@
       font-weight: 600;
     }
 
-    /* Content Section (middle area) */
-    .content-section {
-      flex: 1;
+    /* Selections Container - For Animation */
+    .selections-container {
       display: flex;
+      flex-wrap: nowrap;
+      position: relative;
+      transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      width: 100%;
+      flex: 1;
+      margin-top: 20px;
       align-items: center;
       justify-content: center;
-      padding: 0 20px;
-      position: relative;
-      overflow: hidden;
-      transition: transform 0.4s ease;
     }
-    
-    .content-section.shifted {
-      transform: translateX(-20%);
+
+    .selections-container.shifted {
+      transform: translateX(-25%);
     }
 
     /* Duration Container */
     .duration-container {
       width: 100%;
-      max-width: 800px;
-      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
     }
 
-    /* Duration Options Grid */
+    /* Duration Options Grid - Improved alignment */
     .duration-options {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      gap: 20px;
+      gap: 25px;
+      margin: 0 auto;
+      max-width: 800px;
       width: 100%;
     }
 
@@ -156,7 +121,7 @@
       padding: 30px 20px;
       cursor: pointer;
       text-align: center;
-      transition: all 0.3s;
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
       position: relative;
       min-height: 160px;
       display: flex;
@@ -164,7 +129,6 @@
       align-items: center;
       justify-content: center;
       box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
-      touch-action: manipulation;
     }
 
     /* Selected duration box */
@@ -183,13 +147,13 @@
     }
 
     .duration-time {
-      font-size: 1.8rem;
+      font-size: 2rem;
       font-weight: 700;
       color: white;
     }
 
     .duration-price {
-      font-size: 1.8rem;
+      font-size: 2rem;
       font-weight: 700;
       color: rgb(255, 111, 0);
       transition: color 0.3s ease;
@@ -230,8 +194,8 @@
     .controller-options {
       display: flex;
       justify-content: center;
-      gap: 15px;
-      padding-top: 15px;
+      gap: 20px;
+      padding-top: 20px;
       border-top: 1px solid rgba(255, 255, 255, 0.2);
       margin-top: 15px;
     }
@@ -241,25 +205,29 @@
       background: rgba(20, 20, 35, 0.7);
       border: 1px solid rgba(255, 255, 255, 0.3);
       border-radius: 10px;
-      padding: 8px 0;
-      width: 45px;
-      height: 40px;
+      padding: 10px 0;
+      width: 55px;
+      height: 50px;
       cursor: pointer;
       text-align: center;
       transition: all 0.2s ease;
       font-weight: 600;
-      font-size: 1.1rem;
+      font-size: 1.3rem;
       display: flex;
       align-items: center;
       justify-content: center;
-      touch-action: manipulation;
     }
 
     .controller-option.selected {
       background: rgba(255, 255, 255, 0.9);
       color: rgb(255, 111, 0);
-      transform: scale(1.1);
+      transform: scale(1.15);
       box-shadow: 0 2px 8px rgba(255, 255, 255, 0.4);
+    }
+
+    .controller-option:active {
+      background: rgba(255, 255, 255, 0.7);
+      color: rgb(255, 111, 0);
     }
 
     /* Show controller options when expanded */
@@ -267,63 +235,26 @@
       max-height: 100px;
     }
 
-    /* Bottom Section */
-    .bottom-section {
-      padding: 20px;
-      text-align: center;
-      flex: 0 0 auto;
-      position: relative;
-      z-index: 10;
-    }
-
-    /* Back Button */
-    .back-button {
-      padding: 12px 25px;
-      font-size: 1.1rem;
-      color: white;
-      background: rgba(30, 30, 47, 0.7);
-      border: 2px solid rgba(255, 111, 0, 0.6);
-      border-radius: 10px;
-      cursor: pointer;
-      transition: all 0.3s;
-      font-weight: 600;
-      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-      display: inline-block;
-      min-width: 120px;
-      touch-action: manipulation;
-    }
-    
-    .back-button:active {
-      transform: translateY(2px);
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-    }
-    
-    .back-button.hidden {
-      opacity: 0;
-      pointer-events: none;
-    }
-
-    /* Summary Container */
+    /* Summary Container - Hidden initially, appears on right after player selection */
     .summary-container {
       position: absolute;
-      top: 0;
       right: -100%;
-      height: 100%;
+      top: 50%;
+      transform: translateY(-50%);
       width: 40%;
-      max-width: 450px;
-      background: rgba(18, 18, 24, 0.95);
+      max-width: 400px;
+      opacity: 0;
+      transition: right 0.5s ease, opacity 0.5s ease;
       display: flex;
       flex-direction: column;
-      justify-content: center;
-      padding: 30px;
-      transition: right 0.4s ease;
-      z-index: 5;
-      box-shadow: -5px 0 25px rgba(0, 0, 0, 0.3);
-      border-left: 2px solid rgba(255, 111, 0, 0.6);
+      align-items: center;
+      padding: 20px;
+      z-index: 100;
     }
 
     .summary-container.visible {
-      right: 0;
+      right: 20px;
+      opacity: 1;
     }
 
     /* Price summary */
@@ -331,9 +262,10 @@
       background: rgba(30, 30, 47, 0.7);
       padding: 20px;
       border-radius: 10px;
-      margin-bottom: 25px;
+      margin: 0 auto 25px;
       text-align: left;
       border: 1px solid rgba(255, 111, 0, 0.3);
+      width: 100%;
       box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
     }
 
@@ -361,132 +293,159 @@
       color: rgb(255, 111, 0);
     }
 
-    /* Summary buttons container */
-    .summary-buttons {
+    /* Button container in summary */
+    .button-container {
       display: flex;
       justify-content: space-between;
       gap: 15px;
       width: 100%;
     }
-    
-    /* Back button in summary */
-    .summary-back {
-      padding: 12px 25px;
-      font-size: 1.1rem;
+
+    /* Back Button - In summary and fixed position */
+    .back-button {
+      position: fixed;
+      bottom: 30px;
+      left: 30px;
+      padding: 12px 30px;
+      font-size: 1.2rem;
       color: white;
       background: rgba(30, 30, 47, 0.7);
       border: 2px solid rgba(255, 111, 0, 0.6);
       border-radius: 10px;
       cursor: pointer;
-      transition: all 0.3s;
+      transition: all 0.3s ease;
       font-weight: 600;
-      flex: 1;
+      z-index: 50;
       box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-      touch-action: manipulation;
+      opacity: 1;
     }
-    
-    .summary-back:active {
-      transform: translateY(2px);
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+
+    .back-button.faded {
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(20px);
+    }
+
+    .back-button:hover {
+      background: rgba(255, 111, 0, 0.3);
+      transform: translateY(-2px);
     }
 
     /* Continue Button */
     .continue-button {
-      padding: 12px 25px;
-      font-size: 1.1rem;
+      padding: 12px 30px;
+      font-size: 1.2rem;
       color: white;
       background: rgb(255, 111, 0);
       border: none;
       border-radius: 10px;
       cursor: pointer;
-      transition: all 0.3s;
+      transition: all 0.2s;
       font-weight: 600;
       flex: 1;
       box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-      touch-action: manipulation;
-    }
-    
-    .continue-button:active {
-      transform: translateY(2px);
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
     }
 
-    /* Responsive Media Queries */
+    .continue-button:hover {
+      background: rgb(220, 90, 0);
+      transform: translateY(-2px);
+    }
+
+    /* Summary buttons container */
+    .summary-buttons {
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+      gap: 15px;
+    }
+    
+    /* Back button in summary */
+    .summary-back {
+      padding: 12px 30px;
+      font-size: 1.2rem;
+      color: white;
+      background: rgba(30, 30, 47, 0.7);
+      border: 2px solid rgba(255, 111, 0, 0.6);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-weight: 600;
+      flex: 1;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    }
+    
+    .summary-back:hover {
+      background: rgba(255, 111, 0, 0.3);
+      transform: translateY(-2px);
+    }
+
+    /* Galaxy A7 Tablet Specific Styles */
     @media (max-width: 1024px) {
-      .content-section.shifted {
-        transform: translateX(0);
+      .selections-container.shifted {
+        transform: translateX(0); /* No shift on tablet */
       }
       
       .summary-container {
         position: fixed;
-        top: auto;
-        right: 0;
-        bottom: -100%;
+        bottom: 0;
         left: 0;
+        right: 0;
+        top: auto;
+        transform: translateY(100%);
         width: 100%;
         max-width: none;
-        height: auto;
-        padding: 20px;
-        transition: bottom 0.4s ease;
-        border-left: none;
+        background: rgba(18, 18, 24, 0.95);
+        box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.3);
         border-top: 2px solid rgba(255, 111, 0, 0.6);
+        z-index: 1000;
+        padding-bottom: 30px;
       }
       
       .summary-container.visible {
-        bottom: 0;
+        transform: translateY(0);
         right: 0;
       }
       
       .price-summary {
-        max-width: 600px;
-        margin: 0 auto 20px;
+        max-width: 500px;
+        margin-bottom: 15px;
       }
       
       .summary-buttons {
-        max-width: 600px;
-        margin: 0 auto;
+        max-width: 500px;
       }
     }
-    
-    /* Galaxy A7 Tablet (both orientations) */
-    @media (max-width: 1280px) {
+
+    /* Responsive Adjustments for Galaxy A7 and other tablets */
+    @media (max-width: 1280px) and (min-width: 768px) {
       .duration-box {
         padding: 25px 15px;
-        min-height: 150px;
       }
       
       .duration-time {
-        font-size: 1.6rem;
+        font-size: 1.7rem;
       }
       
       .duration-price {
-        font-size: 1.6rem;
+        font-size: 1.7rem;
       }
       
-      .price-details {
-        font-size: 0.9rem;
+      .controller-option {
+        width: 50px;
+        height: 45px;
+        font-size: 1.2rem;
       }
       
-      .logo-container img {
-        height: 50px;
-      }
-      
-      h1 {
-        font-size: 1.8rem;
+      .summary-back, .continue-button {
+        padding: 10px 20px;
+        font-size: 1.1rem;
       }
     }
-    
-    /* Galaxy A7 Portrait and smaller tablets */
-    @media (max-width: 800px) {
-      .top-section {
-        padding: 20px 20px 10px;
-      }
-      
-      .content-section {
-        padding: 0 15px;
-      }
-      
+
+    /* Tablet and Mobile Adjustments */
+    @media (max-width: 768px) {
       .duration-options {
+        grid-template-columns: repeat(2, 1fr);
         gap: 15px;
       }
       
@@ -504,17 +463,16 @@
       }
       
       .controller-option {
-        width: 40px;
-        height: 35px;
-        font-size: 1rem;
+        width: 45px;
+        height: 40px;
+        font-size: 1.1rem;
       }
       
-      .summary-row {
+      .back-button {
+        bottom: 20px;
+        left: 20px;
         font-size: 1rem;
-      }
-      
-      .summary-row.total {
-        font-size: 1.2rem;
+        padding: 10px 20px;
       }
       
       .summary-back, .continue-button {
@@ -522,47 +480,27 @@
         padding: 10px 20px;
       }
     }
-    
-    /* Phone sizes */
+
+    /* Phone size Adjustments */
     @media (max-width: 480px) {
       .duration-options {
         grid-template-columns: 1fr;
-      }
-      
-      .duration-box {
-        min-height: 130px;
-      }
-      
-      .top-section {
-        padding: 15px 15px 5px;
-      }
-      
-      .logo-container img {
-        height: 40px;
+        gap: 15px;
       }
       
       h1 {
-        font-size: 1.6rem;
+        font-size: 1.7rem;
       }
       
-      .selected-console {
-        font-size: 0.9rem;
-      }
-      
-      .bottom-section {
-        padding: 15px;
-      }
-      
-      .price-summary {
-        padding: 15px;
+      .logo-container img {
+        height: 45px;
       }
     }
   </style>
 </head>
 <body>
   <div class="main-container">
-    <!-- Top section with logo and heading -->
-    <div class="top-section">
+    <div>
       <div class="logo-container">
         <img src="logo.png" alt="Gamespot Logo">
       </div>
@@ -573,48 +511,46 @@
       </div>
     </div>
     
-    <!-- Middle content section -->
-    <div class="content-section" id="contentSection">
+    <!-- This container will slide left when player count is selected -->
+    <div class="selections-container" id="selectionsContainer">
       <div class="duration-container">
         <div class="duration-options" id="durationOptions">
           <!-- Duration options will be populated by JavaScript -->
         </div>
       </div>
+    </div>
+    
+    <!-- This container appears on the right after player selection -->
+    <div class="summary-container" id="summaryContainer">
+      <div class="price-summary" id="priceSummary">
+        <div class="summary-row">
+          <div class="summary-label">Duration:</div>
+          <div class="summary-value" id="summaryDuration">30 min</div>
+        </div>
+        <div class="summary-row">
+          <div class="summary-label">Players:</div>
+          <div class="summary-value" id="summaryPlayers">1 Player</div>
+        </div>
+        <div class="summary-row total">
+          <div class="summary-label">Total:</div>
+          <div class="summary-value" id="summaryTotal">₹70</div>
+        </div>
+      </div>
       
-      <!-- Summary Container (slides in from right) -->
-      <div class="summary-container" id="summaryContainer">
-        <div class="price-summary" id="priceSummary">
-          <div class="summary-row">
-            <div class="summary-label">Duration:</div>
-            <div class="summary-value" id="summaryDuration">30 min</div>
-          </div>
-          <div class="summary-row">
-            <div class="summary-label">Players:</div>
-            <div class="summary-value" id="summaryPlayers">1 Player</div>
-          </div>
-          <div class="summary-row total">
-            <div class="summary-label">Total:</div>
-            <div class="summary-value" id="summaryTotal">₹70</div>
-          </div>
-        </div>
-        
-        <!-- Summary buttons side by side -->
-        <div class="summary-buttons">
-          <div class="summary-back" onclick="goBack()">Back</div>
-          <div class="continue-button" id="continueButton">Continue</div>
-        </div>
+      <!-- Summary buttons side by side -->
+      <div class="summary-buttons">
+        <button class="summary-back" onclick="goBack()">Back</button>
+        <button class="continue-button" id="continueButton">Continue</button>
       </div>
     </div>
     
-    <!-- Bottom section with back button -->
-    <div class="bottom-section">
-      <div class="back-button" id="backButton" onclick="goBack()">Back</div>
-    </div>
+    <!-- Initially visible back button that fades out -->
+    <button class="back-button" id="fixedBackButton" onclick="goBack()">Back</button>
   </div>
-  
+
   <script>
     const selectedConsole = localStorage.getItem('selectedConsole');
-    const isMobileView = window.innerWidth <= 1024;
+    const isMobile = window.innerWidth <= 1024;
 
     // Redirect if no console is selected
     if (!selectedConsole) {
@@ -700,10 +636,10 @@
           controllerOption.textContent = `${count}P`;
           
           // Add click handler for controller selection
-          controllerOption.addEventListener('click', function(e) {
+          controllerOption.onclick = (e) => {
             e.stopPropagation(); // Prevent triggering parent click
             selectControllers(count, item.minutes);
-          });
+          };
           
           controllerOptions.appendChild(controllerOption);
         });
@@ -712,9 +648,7 @@
         box.appendChild(controllerContainer);
         
         // Attach click handler for duration selection
-        box.addEventListener('click', function() {
-          selectDuration(item.minutes, box);
-        });
+        box.onclick = () => selectDuration(item.minutes, box);
         
         options.appendChild(box);
       });
@@ -758,17 +692,16 @@
       // Update summary since we auto-selected 1P
       updateSummary();
       
-      // Show summary container and adjust layout
+      // Show summary container after a brief delay
       setTimeout(() => {
         document.getElementById('summaryContainer').classList.add('visible');
         
-        // Only shift content on desktop
-        if (!isMobileView) {
-          document.getElementById('contentSection').classList.add('shifted');
+        // Only shift on non-mobile devices
+        if (!isMobile) {
+          document.getElementById('selectionsContainer').classList.add('shifted');
         }
         
-        // Hide the back button at bottom
-        document.getElementById('backButton').classList.add('hidden');
+        document.getElementById('fixedBackButton').classList.add('faded');
       }, 200);
     }
 
@@ -782,15 +715,14 @@
       // Update UI for controller options in the selected box
       const controllerOptions = selectedBox.querySelectorAll('.controller-option');
       controllerOptions.forEach(option => {
-        const optionCount = parseInt(option.getAttribute('data-controllers'));
-        if (optionCount === count) {
+        if (parseInt(option.getAttribute('data-controllers')) === count) {
           option.classList.add('selected');
         } else {
           option.classList.remove('selected');
         }
       });
       
-      // Update price on the duration box
+      // Update the price on the duration button
       const priceElement = document.getElementById(`price-${minutes}`);
       const detailsElement = document.getElementById(`details-${minutes}`);
       if (priceElement) {
@@ -839,31 +771,31 @@
       window.location.href = 'payment.html';
     }
 
+    // Continue button event listener
+    document.getElementById('continueButton').addEventListener('click', redirectToPayment);
+
     // Redirect to homepage
     function goBack() {
       window.location.href = 'index.html';
     }
 
-    // Handle window resize
-    window.addEventListener('resize', function() {
-      const wasDesktop = !isMobileView;
-      const isNowDesktop = window.innerWidth > 1024;
-      
-      // Only update if the view type changed
-      if (wasDesktop !== isNowDesktop && selectedDuration) {
-        if (isNowDesktop) {
-          document.getElementById('contentSection').classList.add('shifted');
-        } else {
-          document.getElementById('contentSection').classList.remove('shifted');
-        }
-      }
-    });
-
     // Initialize the page
     loadDurations();
 
-    // Add continue button event listener
-    document.getElementById('continueButton').addEventListener('click', redirectToPayment);
+    // Update on resize
+    window.addEventListener('resize', function() {
+      const wasMobile = isMobile;
+      const nowMobile = window.innerWidth <= 1024;
+      
+      if (wasMobile !== nowMobile && selectedDuration) {
+        // Update layout based on screen size
+        if (nowMobile) {
+          document.getElementById('selectionsContainer').classList.remove('shifted');
+        } else {
+          document.getElementById('selectionsContainer').classList.add('shifted');
+        }
+      }
+    });
   </script>
 </body>
 </html>
