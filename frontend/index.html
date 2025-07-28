@@ -13,6 +13,8 @@
       margin: 0;
       padding: 0;
       box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent; /* Remove blue highlight on tap */
+      user-select: none; /* Prevent text selection */
     }
 
     /* Body Styling */
@@ -28,9 +30,10 @@
       overflow: hidden;
       text-align: center;
       color: white;
+      background-color: #121212; /* Fallback if video fails to load */
     }
 
-    /* Video Background */
+    /* Video Background - Optimized for performance */
     .video-background {
       position: fixed;
       top: 0;
@@ -40,6 +43,17 @@
       object-fit: cover;
       z-index: -1;
       filter: brightness(0.8) contrast(1.1);
+    }
+
+    /* Static Background Fallback - Shows when video is loading */
+    .static-background {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, #121212, #1e1e2f);
+      z-index: -2;
     }
 
     /* Overlay Styling */
@@ -82,6 +96,7 @@
       width: 280px;
       filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
       transition: transform 0.3s;
+      touch-action: manipulation; /* Optimize for touch */
     }
 
     .logo-container img:hover {
@@ -143,6 +158,7 @@
       align-items: center;
       justify-content: center;
       min-height: 250px;
+      touch-action: manipulation; /* Optimize for touch */
     }
 
     .console-logo {
@@ -182,6 +198,15 @@
       box-shadow: 0 15px 30px rgba(255, 111, 0, 0.3),
                  0 0 20px rgba(255, 111, 0, 0.2),
                  inset 0 1px 1px rgba(255, 255, 255, 0.3);
+    }
+
+    /* Active state for touch devices */
+    .console-box:active:not(.booked):not(.admin-use) {
+      transform: translateY(-5px);
+      background: linear-gradient(135deg, 
+                rgba(255, 111, 0, 0.8) 0%, 
+                rgba(255, 80, 0, 0.9) 100%);
+      box-shadow: 0 8px 15px rgba(255, 111, 0, 0.3);
     }
 
     .console-box::before {
@@ -274,6 +299,7 @@
       text-transform: uppercase;
       letter-spacing: 1px;
       box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+      touch-action: manipulation; /* Optimize for touch */
     }
 
     .games-button {
@@ -285,14 +311,15 @@
       transform: translateY(-3px);
       box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
     }
-
-    .games-button:hover {
-      background: linear-gradient(135deg, #9C27B0, #7B1FA2);
-    }
-
+    
+    /* Active state for touch devices */
     .admin-button:active, .games-button:active {
       transform: translateY(-1px);
       box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+    }
+
+    .games-button:hover {
+      background: linear-gradient(135deg, #9C27B0, #7B1FA2);
     }
 
     /* Initial animation for console boxes */
@@ -462,8 +489,11 @@
     <button class="admin-button" onclick="goToAdmin()">Admin</button>
   </div>
 
-  <!-- Video Background -->
-  <video class="video-background" autoplay muted loop playsinline>
+  <!-- Static Background Fallback -->
+  <div class="static-background"></div>
+
+  <!-- Video Background - Optimized -->
+  <video class="video-background" autoplay muted loop playsinline preload="auto" disablePictureInPicture>
     <source src="background.mp4" type="video/mp4">
     Your browser does not support the video tag.
   </video>
@@ -488,6 +518,41 @@
   </div>
 
   <script>
+    // Video optimization
+    document.addEventListener('DOMContentLoaded', function() {
+      const video = document.querySelector('.video-background');
+      
+      // Try to optimize video playback
+      if (video) {
+        // Lower quality for mobile devices
+        if (window.innerWidth < 768) {
+          // Set video to low resolution if possible
+          video.style.filter = 'blur(1px) brightness(0.7) contrast(1.1)';
+        }
+        
+        // Handle video loading errors
+        video.addEventListener('error', function() {
+          console.log('Video failed to load - using static background');
+          video.style.display = 'none';
+        });
+        
+        // Set video playback quality
+        try {
+          if (video.canPlayType) {
+            video.playbackRate = 1.0; // Normal speed
+            
+            // For some devices, we can try lower quality
+            if ('mediaSource' in window) {
+              video.currentTime = 0;
+              video.play().catch(e => console.log('Autoplay prevented:', e));
+            }
+          }
+        } catch(e) {
+          console.log('Error optimizing video:', e);
+        }
+      }
+    });
+    
     let initialLoad = true;
     const API_URL = '/api';
 
