@@ -263,7 +263,6 @@
       text-align: center;
       box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
       animation: modalFadeIn 0.3s;
-      z-index: 999;
     }
 
     @keyframes modalFadeIn {
@@ -303,8 +302,6 @@
       cursor: pointer;
       transition: all 0.2s;
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-      user-select: none;
-      color: white;
     }
 
     .key:hover {
@@ -441,7 +438,7 @@
       to { transform: rotate(360deg); }
     }
     
-    /* Photo Modal */
+    /* Payment Photo Modal */
     .photo-modal {
       display: none;
       position: fixed;
@@ -484,120 +481,178 @@
       cursor: pointer;
       box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
     }
-    /* Photo related styles */
-.photo-modal-close:hover {
-  background: rgb(255, 111, 0);
-  transform: scale(1.1);
-}
+    
+    .photo-modal-close:hover {
+      background: rgb(255, 111, 0);
+      transform: scale(1.1);
+    }
+    
+    .user-photo {
+      max-width: 100%;
+      border-radius: 8px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+      margin-top: 10px;
+    }
+    
+    .photo-info {
+      margin-top: 15px;
+      display: flex;
+      justify-content: space-between;
+      background: rgba(0, 0, 0, 0.2);
+      padding: 10px 15px;
+      border-radius: 8px;
+    }
+    
+    .photo-info span {
+      font-weight: 600;
+      color: rgb(255, 111, 0);
+    }
+    
+    /* Payment record with thumbnail */
+    .user-thumbnail {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      object-fit: cover;
+      cursor: pointer;
+      border: 2px solid rgb(255, 111, 0);
+      transition: all 0.2s;
+    }
+    
+    .user-thumbnail:hover {
+      transform: scale(1.1);
+      box-shadow: 0 2px 10px rgba(255, 111, 0, 0.5);
+    }
+    
+    /* Tab navigation for payments */
+    .payment-tabs {
+      display: flex;
+      margin-bottom: 20px;
+      border-radius: 8px;
+      overflow: hidden;
+      background: rgba(30, 30, 47, 0.5);
+      padding: 2px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    }
+    
+    .payment-tab {
+      flex: 1;
+      padding: 10px 15px;
+      text-align: center;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.3s;
+      border-radius: 6px;
+    }
+    
+    .payment-tab.active {
+      background: rgb(255, 111, 0);
+      color: white;
+      box-shadow: 0 2px 8px rgba(255, 111, 0, 0.4);
+    }
+    
+    .payment-tab:not(.active):hover {
+      background: rgba(255, 111, 0, 0.2);
+    }
+    
+    .tab-content {
+      display: none;
+    }
+    
+    .tab-content.active {
+      display: block;
+      animation: fadeIn 0.3s;
+    }
 
-.user-photo {
-  max-width: 100%;
-  border-radius: 8px;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-  margin-top: 10px;
-}
+    /* Source badge */
+    .source-badge {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      margin-left: 5px;
+      vertical-align: middle;
+    }
+    
+    .server-source {
+      background-color: #4CAF50;
+      color: white;
+    }
+    
+    .local-source {
+      background-color: #2196F3;
+      color: white;
+    }
+    
+    .admin-badge {
+      background-color: #9C27B0;
+      color: white;
+    }
+    
+    /* Amount highlighting */
+    .amount-cell {
+      font-weight: 700;
+      color: #4CAF50;
+    }
 
-.photo-info {
-  margin-top: 15px;
-  display: flex;
-  justify-content: space-between;
-  background: rgba(0, 0, 0, 0.2);
-  padding: 10px 15px;
-  border-radius: 8px;
-}
+    /* Responsive Adjustments */
+    @media (max-width: 768px) {
+      .header-bar {
+        flex-direction: column;
+        padding: 10px 15px;
+      }
 
-.photo-info span {
-  font-weight: 600;
-  color: rgb(255, 111, 0);
-}
+      .header-bar div {
+        margin-top: 5px;
+      }
 
-/* Payment record with thumbnail */
-.user-thumbnail {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  object-fit: cover;
-  cursor: pointer;
-  border: 2px solid rgb(255, 111, 0);
-  transition: all 0.2s;
-}
+      .main-container {
+        padding-top: 100px;
+      }
 
-.user-thumbnail:hover {
-  transform: scale(1.1);
-  box-shadow: 0 2px 10px rgba(255, 111, 0, 0.5);
-}
+      h1 {
+        font-size: 2rem;
+      }
+      
+      .admin-button {
+        padding: 10px 20px;
+        font-size: 0.9rem;
+      }
+      
+      .device-table th, 
+      .device-table td {
+        padding: 8px 10px;
+        font-size: 0.9rem;
+      }
+      
+      .user-thumbnail {
+        width: 30px;
+        height: 30px;
+      }
+    }
 
-/* Add these CSS styles to fix the payment tab functionality */
-.payment-tabs {
-  display: flex;
-  margin-bottom: 20px;
-  border-radius: 8px;
-  overflow: hidden;
-  background: rgba(30, 30, 47, 0.5);
-  padding: 2px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-}
-
-.payment-tab {
-  flex: 1;
-  padding: 10px 15px;
-  text-align: center;
-  cursor: pointer;
-  font-weight: 600;
-  transition: all 0.3s;
-  border-radius: 6px;
-}
-
-.payment-tab.active {
-  background: rgb(255, 111, 0);
-  color: white;
-  box-shadow: 0 2px 8px rgba(255, 111, 0, 0.4);
-}
-
-.payment-tab:not(.active):hover {
-  background: rgba(255, 111, 0, 0.2);
-}
-
-.tab-content {
-  display: none;
-}
-
-.tab-content.active {
-  display: block;
-  animation: fadeIn 0.3s;
-}
-
-/* Source badge styles */
-.source-badge {
-  display: inline-block;
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-size: 0.7rem;
-  font-weight: 600;
-  margin-left: 5px;
-  vertical-align: middle;
-}
-
-.server-source {
-  background-color: #4CAF50;
-  color: white;
-}
-
-.local-source {
-  background-color: #2196F3;
-  color: white;
-}
-
-.admin-badge {
-  background-color: #9C27B0;
-  color: white;
-}
+    @media (max-width: 480px) {
+      .admin-data {
+        padding: 15px 10px;
+        font-size: 0.9rem;
+      }
+      
+      .admin-button-bar {
+        flex-direction: column;
+        gap: 10px;
+      }
+      
+      .device-table {
+        font-size: 0.8rem;
+      }
+    }
   </style>
 </head>
 <body>
   <!-- Header Bar -->
   <div class="header-bar">
-    <div id="current-date">Current Date and Time (UTC - YYYY-MM-DD HH:MM:SS formatted): 2025-07-27 10:27:00</div>
+    <div id="current-date">Current Date and Time (UTC - YYYY-MM-DD HH:MM:SS formatted): 2025-07-23 12:06:56</div>
     <div id="current-user">Current User's Login: Azonix07</div>
   </div>
 
@@ -605,9 +660,8 @@
   <div id="loginModal" class="modal">
     <div class="modal-content">
       <h2 style="color: rgb(255, 111, 0); font-size: 1.8rem; margin-bottom: 15px;">Admin Login</h2>
-      <div class="password-display" id="passwordDisplay"></div>
+      <div class="password-display" id="passwordDisplay">****</div>
       <div class="keypad">
-        <!-- Digit keys with DIRECT onclick handlers to fix keypad issue -->
         <div class="key" onclick="addDigit(1)">1</div>
         <div class="key" onclick="addDigit(2)">2</div>
         <div class="key" onclick="addDigit(3)">3</div>
@@ -628,7 +682,7 @@
   <!-- Photo Modal -->
   <div id="photoModal" class="photo-modal">
     <div class="photo-modal-content">
-      <div class="photo-modal-close" id="closePhotoModal">&times;</div>
+      <div class="photo-modal-close" onclick="closePhotoModal()">&times;</div>
       <h2 style="color: rgb(255, 111, 0);">User Verification Photo</h2>
       <img id="fullUserPhoto" class="user-photo" src="" alt="User verification photo">
       <div class="photo-info">
@@ -645,11 +699,11 @@
 
     <!-- Admin Buttons -->
     <div class="admin-button-bar">
-      <button class="admin-button" id="btnViewDevices">View All Devices</button>
-      <button class="admin-button" id="btnViewPayments">View Payments</button>
-      <button class="admin-button" id="btnResetAll">Reset All Bookings</button>
-      <button class="admin-button" id="btnESP32Status">Check ESP32 Status</button>
-      <button class="admin-button" id="btnGoBack">Go Back</button>
+      <button class="admin-button" onclick="fetchConsoles()">View All Devices</button>
+      <button class="admin-button" onclick="fetchPayments()">View Payments</button>
+      <button class="admin-button" onclick="resetAllBookings()">Reset All Bookings</button>
+      <button class="admin-button" onclick="checkESP32Status()">Check ESP32 Status</button>
+      <button class="admin-button" onclick="goBack()">Go Back</button>
     </div>
 
     <!-- Status message area -->
@@ -660,185 +714,1059 @@
       <p style="text-align: center;">Welcome to the admin control panel. Select an option above to get started.</p>
     </div>
   </div>
-
-  <!-- Emergency access button -->
-  <button class="emergency-access" id="emergencyAccess">Emergency Admin Access</button>
+ <script src="config.js"></script>
   <script>
-  // Debug mode to help track issues
-  const DEBUG = true;
-  
-  function debug(message) {
-    if (DEBUG) {
-      console.log(`[DEBUG] ${message}`);
+    // Update current date and time in UTC format with exact format requested
+    function updateDateTime() {
+      // Display static date/time as requested
+      document.getElementById('current-date').textContent = "Current Date and Time (UTC - YYYY-MM-DD HH:MM:SS formatted): 2025-07-23 12:06:56";
+      document.getElementById('current-user').textContent = "Current User's Login: Azonix07";
     }
-  }
-  
-  debug("Script started");
 
-  // Update current date and time in UTC format
-  function updateDateTime() {
-    document.getElementById('current-date').textContent = "Current Date and Time (UTC - YYYY-MM-DD HH:MM:SS formatted): 2025-07-27 10:27:00";
-    document.getElementById('current-user').textContent = "Current User's Login: Azonix07";
-  }
+    // Initialize date/time
+    updateDateTime();
 
-  // Initialize date/time
-  updateDateTime();
+    // Login functionality
+    const loginModal = document.getElementById('loginModal');
+    const adminPanel = document.getElementById('adminPanel');
+    let password = '';
+    const ADMIN_PASSWORD = '6006'; // Password as requested
+    
+    // Track console data and endpoints
+    let consoleData = [];
+    let timerUpdateInterval = null;
+    const API_BASE_URL = '/api';
+    
+    // Store ESP32 status
+    let esp32Status = {};
 
-  // Login functionality - FIXED VERSION
-  const loginModal = document.getElementById('loginModal');
-  const adminPanel = document.getElementById('adminPanel');
-  let password = '';
-  const ADMIN_PASSWORD = '6006'; // Password as requested
-  
-  // Track console data and endpoints
-  let consoleData = [];
-  let timerUpdateInterval = null;
-  
-  // FIXED: Corrected API URL (without trailing /api to prevent double /api/api/ issue)
-  const API_BASE_URL = 'http://localhost:3000';
-  
-  // Store ESP32 status
-  let esp32Status = {};
+    function addDigit(digit) {
+      if (password.length < 4) {
+        password += digit;
+        updatePasswordDisplay();
+      }
+    }
 
-  // Password functions with direct handlers
-  function addDigit(digit) {
-    debug(`Adding digit: ${digit}`);
-    if (password.length < 4) {
-      password += digit;
+    function clearPassword() {
+      password = '';
       updatePasswordDisplay();
     }
-  }
 
-  function clearPassword() {
-    debug("Clearing password");
-    password = '';
-    updatePasswordDisplay();
-  }
-
-  function updatePasswordDisplay() {
-    const display = document.getElementById('passwordDisplay');
-    display.textContent = '*'.repeat(password.length);
-    debug(`Password display updated: ${password.length} digits`);
-  }
-
-  function submitPassword() {
-    debug(`Submitting password: ${password}`);
-    if (password === ADMIN_PASSWORD) {
-      debug("Password correct - showing admin panel");
-      loginModal.style.display = 'none';
-      adminPanel.style.display = 'block';
-      // Fetch consoles automatically after login
-      setTimeout(fetchConsoles, 100);
-    } else {
-      debug("Password incorrect");
-      alert('Incorrect password. Please try again.');
-      clearPassword();
+    function updatePasswordDisplay() {
+      const display = document.getElementById('passwordDisplay');
+      display.textContent = '*'.repeat(password.length);
     }
-  }
 
-  function cancelLogin() {
-    debug("Canceling login");
-    window.location.href = 'index.html';
-  }
-
-  // Helper function to validate data URLs
-  function isValidDataUrl(url) {
-    return url && typeof url === 'string' && url.startsWith('data:image');
-  }
-
-  // Show status message
-  function showStatusMessage(message, type) {
-    const statusElement = document.getElementById('statusMessage');
-    statusElement.textContent = message;
-    statusElement.className = `status-message ${type}`;
-    statusElement.style.display = 'block';
-    
-    // Hide after 5 seconds
-    setTimeout(() => {
-      statusElement.style.display = 'none';
-    }, 5000);
-  }
-
-  // Format time for display (mm:ss)
-  function formatTime(milliseconds) {
-    if (!milliseconds || milliseconds <= 0) return '-';
-    const mins = Math.floor(milliseconds / 60000);
-    const secs = Math.floor((milliseconds % 60000) / 1000);
-    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
-  }
-
-  // Format date time more readable
-  function formatDateTime(dateTimeStr) {
-    if (!dateTimeStr) return '-';
-    
-    try {
-      const date = new Date(dateTimeStr);
-      return date.toLocaleString();
-    } catch (e) {
-      return dateTimeStr;
+    function submitPassword() {
+      if (password === ADMIN_PASSWORD) {
+        loginModal.style.display = 'none';
+        adminPanel.style.display = 'block';
+        // Fetch consoles automatically after login
+        fetchConsoles();
+      } else {
+        alert('Incorrect password. Please try again.');
+        clearPassword();
+      }
     }
-  }
 
-  // Update timers live without refreshing the whole table
-  function updateTimersLive() {
-    // Stop any existing update interval
-    if (timerUpdateInterval) {
-      clearInterval(timerUpdateInterval);
+    function cancelLogin() {
+      window.location.href = 'index.html';
     }
-    
-    // Start a new update interval
-    timerUpdateInterval = setInterval(() => {
-      let needsRefresh = false;
+
+    // Helper function to validate data URLs
+    function isValidDataUrl(url) {
+      return url && typeof url === 'string' && url.startsWith('data:image');
+    }
+
+    // Show status message
+    function showStatusMessage(message, type) {
+      const statusElement = document.getElementById('statusMessage');
+      statusElement.textContent = message;
+      statusElement.className = `status-message ${type}`;
+      statusElement.style.display = 'block';
       
-      consoleData.forEach(console => {
-        if (!console.booked || !console.remainingTime) return;
+      // Hide after 5 seconds
+      setTimeout(() => {
+        statusElement.style.display = 'none';
+      }, 5000);
+    }
+
+    // Format time for display (mm:ss)
+    function formatTime(milliseconds) {
+      if (!milliseconds || milliseconds <= 0) return '-';
+      const mins = Math.floor(milliseconds / 60000);
+      const secs = Math.floor((milliseconds % 60000) / 1000);
+      return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+    }
+
+    // Format date time more readable
+    function formatDateTime(dateTimeStr) {
+      if (!dateTimeStr) return '-';
+      
+      try {
+        const date = new Date(dateTimeStr);
+        return date.toLocaleString();
+      } catch (e) {
+        return dateTimeStr;
+      }
+    }
+
+    // Update timers live without refreshing the whole table
+    function updateTimersLive() {
+      // Stop any existing update interval
+      if (timerUpdateInterval) {
+        clearInterval(timerUpdateInterval);
+      }
+      
+      // Start a new update interval
+      timerUpdateInterval = setInterval(() => {
+        let needsRefresh = false;
         
-        // Don't update timer for admin-controlled consoles
-        if (console.adminControl) return;
-        
-        // Update the remaining time by subtracting 1 second
-        console.remainingTime = Math.max(0, console.remainingTime - 1000);
-        
-        // Update the timer cell in the table
-        const timerCell = document.getElementById(`timer-${console.name.replace(/[^a-zA-Z0-9]/g, '-')}`);
-        if (timerCell) {
-          timerCell.textContent = formatTime(console.remainingTime);
+        consoleData.forEach(console => {
+          if (!console.booked || !console.remainingTime) return;
           
-          // Change color when time is running low
-          if (console.remainingTime <= 60000) { // Last minute
-            timerCell.style.color = '#ff6b6b'; // Red
+          // Don't update timer for admin-controlled consoles
+          if (console.adminControl) return;
+          
+          // Update the remaining time by subtracting 1 second
+          console.remainingTime = Math.max(0, console.remainingTime - 1000);
+          
+          // Update the timer cell in the table
+          const timerCell = document.getElementById(`timer-${console.name.replace(/[^a-zA-Z0-9]/g, '-')}`);
+          if (timerCell) {
+            timerCell.textContent = formatTime(console.remainingTime);
+            
+            // Change color when time is running low
+            if (console.remainingTime <= 60000) { // Last minute
+              timerCell.style.color = '#ff6b6b'; // Red
+            }
+          }
+          
+          // If timer reaches zero, move the booking to payment history
+          if (console.remainingTime <= 0) {
+            moveExpiredBookingToHistory(console.name);
+            needsRefresh = true;
+          }
+        });
+        
+        // If any timer reached zero, refresh the data
+        if (needsRefresh) {
+          fetchConsoles();
+        }
+      }, 1000);
+    }
+
+    // Get local bookings from localStorage
+    function getLocalBookings() {
+      const bookingsJSON = localStorage.getItem('consoleBookings');
+      if (!bookingsJSON) {
+        return [];
+      }
+      
+      try {
+        // Filter out expired bookings and move them to history
+        const bookings = JSON.parse(bookingsJSON);
+        const currentTime = Date.now();
+        const activeBookings = [];
+        
+        bookings.forEach(booking => {
+          // Skip admin controlled devices - don't expire them
+          if (booking.adminControl) {
+            activeBookings.push(booking);
+            return;
+          }
+          
+          if (booking.endTime > currentTime) {
+            activeBookings.push(booking);
+          } else {
+            // Move expired booking to payment history
+            moveBookingToPaymentHistory(booking);
+          }
+        });
+        
+        // Update localStorage with only active bookings
+        localStorage.setItem('consoleBookings', JSON.stringify(activeBookings));
+        return activeBookings;
+      } catch (e) {
+        console.error('Error parsing local bookings:', e);
+        return [];
+      }
+    }
+    
+    // Get payment history from localStorage
+    function getPaymentHistory() {
+      const historyJSON = localStorage.getItem('paymentHistory');
+      if (!historyJSON) {
+        return [];
+      }
+      
+      try {
+        return JSON.parse(historyJSON);
+      } catch (e) {
+        console.error('Error parsing payment history:', e);
+        return [];
+      }
+    }
+    
+    // Move a booking to payment history when it expires
+    function moveBookingToPaymentHistory(booking) {
+      // Skip admin controlled devices
+      if (booking.adminControl) return;
+      
+      // Get existing payment history
+      let history = getPaymentHistory();
+      
+      // Get amount from booking or calculate based on current pricing matrix
+      const amount = booking.amount || calculateAmount(booking.minutes, booking.players || booking.controllers || 1);
+      
+      // Create payment record from booking
+      const payment = {
+        id: `local-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        console: booking.console,
+        minutes: booking.minutes,
+        method: booking.method || 'Unknown',
+        user: 'Azonix07',
+        players: booking.players || booking.controllers || 1,
+        amount: amount,
+        paid_at: new Date(booking.endTime - (booking.minutes * 60 * 1000)).toISOString(),
+        completed_at: new Date().toISOString(),
+        source: 'local'
+      };
+      
+      // Add to history
+      history.push(payment);
+      
+      // Limit history size (optional, to prevent localStorage from growing too large)
+      if (history.length > 1000) {
+        history = history.slice(-1000); // Keep only the last 1000 payments
+      }
+      
+      // Save updated history
+      localStorage.setItem('paymentHistory', JSON.stringify(history));
+      
+      // Also check for photo and move it to history if available
+      movePhotoToPaymentHistory(booking, payment.id);
+    }
+    
+    // Calculate amount based on duration and players using the new pricing matrix
+    function calculateAmount(minutes, players) {
+      // Define the pricing matrix
+      const pricingMatrix = {
+        30: { 1: 70, 2: 90, 4: 150 },
+        60: { 1: 130, 2: 150, 4: 210 },
+        90: { 1: 170, 2: 200, 4: 270 },
+        120: { 1: 210, 2: 240, 4: 300 }
+      };
+      
+      // Get the price based on duration and players
+      if (pricingMatrix[minutes] && pricingMatrix[minutes][players]) {
+        return pricingMatrix[minutes][players];
+      }
+      
+      // Default fallback calculation
+      return minutes * 2 + (players * 10);
+    }
+    
+    // Move photo to payment history
+    function movePhotoToPaymentHistory(booking, paymentId) {
+      const photosJSON = localStorage.getItem('userPhotos');
+      if (!photosJSON) return;
+      
+      try {
+        const photos = JSON.parse(photosJSON);
+        const bookingId = `${booking.console}-${booking.endTime}`;
+        
+        if (photos[bookingId]) {
+          // Get photo history storage
+          let photoHistory = {};
+          const photoHistoryJSON = localStorage.getItem('photoHistory');
+          if (photoHistoryJSON) {
+            photoHistory = JSON.parse(photoHistoryJSON);
+          }
+          
+          // Store the photo in history with the payment ID
+          photoHistory[paymentId] = photos[bookingId];
+          
+          // Save updated photo history
+          localStorage.setItem('photoHistory', JSON.stringify(photoHistory));
+          
+          // Clean up original photo entry
+          delete photos[bookingId];
+          localStorage.setItem('userPhotos', JSON.stringify(photos));
+        }
+      } catch (e) {
+        console.error('Error moving photo to history:', e);
+      }
+    }
+    
+    // Move an expired booking to history by console name and turn off PS5
+    async function moveExpiredBookingToHistory(consoleName) {
+      const bookings = getLocalBookings();
+      const booking = bookings.find(b => b.console === consoleName);
+      
+      if (booking && !booking.adminControl) {
+        moveBookingToPaymentHistory(booking);
+        clearLocalBooking(consoleName);
+        
+        // Turn off PS5 when timer expires
+        if (consoleName.includes('PS5')) {
+          try {
+            await sendPowerCommand(consoleName, 'off');
+            console.log(`Timer expired: Power OFF command sent to ${consoleName}`);
+          } catch (err) {
+            console.error(`Error turning off ${consoleName} after timer expired:`, err);
           }
         }
+      }
+    }
+
+    // Get stored photos from localStorage
+    function getStoredPhotos() {
+      // Combine current photos and historical photos
+      const photos = {};
+      
+      try {
+        // Current photos
+        const photosJSON = localStorage.getItem('userPhotos');
+        if (photosJSON) {
+          Object.assign(photos, JSON.parse(photosJSON));
+        }
         
-        // If timer reaches zero, move the booking to payment history
-        if (console.remainingTime <= 0) {
-          moveExpiredBookingToHistory(console.name);
-          needsRefresh = true;
+        // Historical photos
+        const photoHistoryJSON = localStorage.getItem('photoHistory');
+        if (photoHistoryJSON) {
+          Object.assign(photos, JSON.parse(photoHistoryJSON));
+        }
+        
+        return photos;
+      } catch (e) {
+        console.error('Error parsing stored photos:', e);
+        return {};
+      }
+    }
+
+    // Clear local booking for a specific console
+    function clearLocalBooking(consoleName) {
+      const bookings = getLocalBookings();
+      const booking = bookings.find(b => b.console === consoleName);
+      
+      if (booking) {
+        // Skip admin controlled devices for payment history
+        if (!booking.adminControl) {
+          // Move booking to payment history before clearing it
+          moveBookingToPaymentHistory(booking);
+        }
+      }
+      
+      // Update local storage with filtered bookings
+      const updatedBookings = bookings.filter(b => b.console !== consoleName);
+      localStorage.setItem('consoleBookings', JSON.stringify(updatedBookings));
+    }
+
+    // Clear all local bookings
+    function clearAllBookings() {
+      // Move non-admin bookings to payment history before clearing
+      const bookings = getLocalBookings();
+      bookings.forEach(booking => {
+        if (!booking.adminControl) {
+          moveBookingToPaymentHistory(booking);
         }
       });
       
-      // If any timer reached zero, refresh the data
-      if (needsRefresh) {
-        fetchConsoles();
-      }
-    }, 1000);
-  }
-
-  // Get local bookings from localStorage
-  function getLocalBookings() {
-    const bookingsJSON = localStorage.getItem('consoleBookings');
-    if (!bookingsJSON) {
-      return [];
+      // Clear the active bookings
+      localStorage.setItem('consoleBookings', JSON.stringify([]));
     }
     
-    try {
-      // Filter out expired bookings and move them to history
-      const bookings = JSON.parse(bookingsJSON);
+    // Send power command to ESP32
+    async function sendPowerCommand(consoleName, action) {
+      try {
+        showStatusMessage(`Sending ${action} command to ${consoleName}...`, 'info');
+        
+        const response = await fetch(`${API_BASE_URL}/power-control`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            console: consoleName,
+            action: action
+          })
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Unknown error');
+        }
+        
+        const result = await response.json();
+        showStatusMessage(`${result.message}`, 'success');
+        return true;
+      } catch (error) {
+        console.error(`Error sending power ${action} command to ${consoleName}:`, error);
+        showStatusMessage(`Failed to send power ${action} command to ${consoleName}: ${error.message}`, 'error');
+        return false;
+      }
+    }
+    
+    // Check ESP32 status
+    async function checkESP32Status() {
+      const adminData = document.getElementById('adminData');
+      adminData.innerHTML = '<div style="text-align: center; padding: 20px;">Checking ESP32 status...<div class="loading" style="margin: 10px auto; display: block;"></div></div>';
+      
+      try {
+        const response = await fetch(`${API_BASE_URL}/esp32-status`);
+        
+        if (!response.ok) {
+          throw new Error(`API returned status ${response.status}`);
+        }
+        
+        const data = await response.json();
+        esp32Status = {};
+        
+        // Generate HTML for ESP32 status table
+        let html = '<h3 style="margin-bottom: 15px; color: rgb(255, 111, 0);">ESP32 Controller Status</h3>';
+        html += '<table class="device-table">';
+        html += '<tr>';
+        html += '<th>Console</th>';
+        html += '<th>IP Address</th>';
+        html += '<th>Status</th>';
+        html += '<th>Actions</th>';
+        html += '</tr>';
+        
+        data.controllers.forEach(controller => {
+          esp32Status[controller.console] = controller.status;
+          
+          html += `<tr>`;
+          html += `<td>${controller.console}</td>`;
+          html += `<td>${controller.ip}</td>`;
+          html += `<td>
+            <span class="esp32-status esp32-${controller.status}"></span>
+            ${controller.status === 'online' ? 'Online' : 'Offline'}
+          </td>`;
+          html += `<td>
+            ${controller.status === 'online' ? 
+              `<button class="power-button power-on" onclick="sendPowerCommand('${controller.console}', 'on')">Power ON</button>
+               <button class="power-button power-off" onclick="sendPowerCommand('${controller.console}', 'off')">Power OFF</button>` : 
+              '<button class="power-button" disabled>Unavailable</button>'}
+          </td>`;
+          html += `</tr>`;
+        });
+        
+        html += '</table>';
+        html += `<p style="font-size: 0.9rem; color: #aaa; margin-top: 20px; text-align: right;">
+          Last updated: ${new Date(data.timestamp).toLocaleString()}</p>`;
+        
+        adminData.innerHTML = html;
+      } catch (error) {
+        adminData.innerHTML = `<div class="error" style="display: block;">
+          Error checking ESP32 status: ${error.message}<br>
+          <button class="admin-button" style="margin-top: 15px;" onclick="fetchConsoles()">Back to Consoles</button>
+        </div>`;
+      }
+    }
+    
+    // Toggle admin power control for a device
+    async function togglePower(consoleName, currentState) {
+      const newState = !currentState;
+      
+      // Get current bookings
+      const bookings = getLocalBookings();
+      
+      if (newState) {
+        // Turn ON - Send power ON command to ESP32 if it's a PS5
+        if (consoleName.includes('PS5')) {
+          try {
+            const success = await sendPowerCommand(consoleName, 'on');
+            if (!success) {
+              showStatusMessage(`Warning: Failed to send power ON command to ${consoleName}, but booking will still be created`, 'info');
+            }
+          } catch (err) {
+            console.error(`Error sending power ON command to ${consoleName}:`, err);
+            showStatusMessage(`Warning: Failed to send power ON command to ${consoleName}, but booking will still be created`, 'info');
+          }
+        }
+        
+        // Add admin control booking
+        const existingIndex = bookings.findIndex(b => b.console === consoleName);
+        
+        // Create admin booking object
+        const adminBooking = {
+          console: consoleName,
+          adminControl: true,
+          booked: true,
+          endTime: Date.now() + (365 * 24 * 60 * 60 * 1000), // Set far future date (1 year)
+          method: 'admin'
+        };
+        
+        if (existingIndex >= 0) {
+          // Replace existing booking with admin booking
+          bookings[existingIndex] = adminBooking;
+        } else {
+          // Add new admin booking
+          bookings.push(adminBooking);
+        }
+        
+        // Save updated bookings
+        localStorage.setItem('consoleBookings', JSON.stringify(bookings));
+        showStatusMessage(`${consoleName} turned ON by admin`, 'success');
+      } else {
+        // Turn OFF - Send power OFF command to ESP32 if it's a PS5
+        if (consoleName.includes('PS5')) {
+          try {
+            const success = await sendPowerCommand(consoleName, 'off');
+            if (!success) {
+              showStatusMessage(`Warning: Failed to send power OFF command to ${consoleName}, but booking will still be removed`, 'info');
+            }
+          } catch (err) {
+            console.error(`Error sending power OFF command to ${consoleName}:`, err);
+            showStatusMessage(`Warning: Failed to send power OFF command to ${consoleName}, but booking will still be removed`, 'info');
+          }
+        }
+        
+        // Remove admin control booking
+        const filteredBookings = bookings.filter(b => b.console !== consoleName);
+        
+        // Update bookings with filtered list
+        localStorage.setItem('consoleBookings', JSON.stringify(filteredBookings));
+        showStatusMessage(`${consoleName} turned OFF by admin`, 'success');
+      }
+      
+      // Refresh the consoles display
+      fetchConsoles();
+    }
+
+    // Admin panel functionality - Enhanced to include local bookings and admin control
+    async function fetchConsoles() {
+      const adminData = document.getElementById('adminData');
+      adminData.innerHTML = '<div style="text-align: center; padding: 20px;">Loading device data...<div class="loading" style="margin: 10px auto; display: block;"></div></div>';
+
+      try {
+        // Get server consoles
+        const response = await fetch(`${API_BASE_URL}/status`);
+        let serverConsoles = [];
+        if (response.ok) {
+          serverConsoles = await response.json();
+        } else {
+          console.error('Failed to fetch server consoles');
+        }
+
+        // Get local bookings
+        const localBookings = getLocalBookings();
+        const localBookingsMap = {};
+        localBookings.forEach(b => {
+          localBookingsMap[b.console] = b;
+        });
+
+        // Merge server consoles with local bookings
+        consoleData = serverConsoles.map(console => {
+          const localBooking = localBookingsMap[console.name];
+          
+          if (localBooking) {
+            const remainingTime = Math.max(0, localBooking.endTime - Date.now());
+            return {
+              ...console,
+              booked: true,
+              remainingTime: remainingTime,
+              source: 'local',
+              adminControl: localBooking.adminControl || false
+            };
+          }
+          
+          return {
+            ...console,
+            source: 'server',
+            adminControl: false
+          };
+        });
+        
+        // Generate HTML for the table
+        let html = '<h3 style="margin-bottom: 15px; color: rgb(255, 111, 0);">Device Status</h3>';
+        html += '<table class="device-table">';
+        html += '<tr>';
+        html += '<th>Device Name</th>';
+        html += '<th>Status</th>';
+        html += '<th>Control</th>';
+        html += '<th>Timer</th>';
+        html += '<th>Actions</th>';
+        html += '</tr>';
+        
+        consoleData.forEach(c => {
+          // Determine status text and style
+          let status, statusClass;
+          
+          if (c.adminControl) {
+            status = 'Admin Control';
+            statusClass = 'admin-control';
+          } else if (c.booked) {
+            status = 'Booked';
+            statusClass = 'powered-on';
+          } else {
+            status = 'Available';
+            statusClass = 'powered-off';
+          }
+          
+          // Create a unique ID for this timer cell for live updates
+          const timerId = `timer-${c.name.replace(/[^a-zA-Z0-9]/g, '-')}`;
+          
+          // Check if this is a PS5 and add ESP32 status indicator
+          const isPS5 = c.name.includes('PS5');
+          const esp32StatusClass = esp32Status[c.name] ? 
+            `esp32-${esp32Status[c.name]}` : 'esp32-unknown';
+          
+          html += `<tr>`;
+          html += `<td>${c.name}${isPS5 ? ` <span class="esp32-status ${esp32StatusClass}"></span>` : ''}</td>`;
+          html += `<td><span class="${statusClass}">${status}</span></td>`;
+          html += `<td>
+            ${c.source === 'local' ? 
+              '<span class="source-badge local-source">Local</span>' : 
+              '<span class="source-badge server-source">Server</span>'}
+          </td>`;
+          html += `<td><span id="${timerId}" class="timer-cell">
+            ${c.adminControl ? 'Admin Use' : (c.booked ? formatTime(c.remainingTime) : '-')}
+          </span></td>`;
+          html += `<td>
+            ${c.booked ? 
+              `<button class="reset-button" onclick="resetDevice('${c.name}', '${c.source}')">Reset</button>` : 
+              ''}
+            <button class="power-button ${c.adminControl ? 'power-on' : 'power-off'}" 
+              onclick="togglePower('${c.name}', ${c.adminControl || false})">
+              ${c.adminControl ? 'Turn Off' : 'Turn On'}
+            </button>
+          </td>`;
+          html += `</tr>`;
+        });
+        
+        html += '</table>';
+        html += `<p style="font-size: 0.9rem; color: #aaa; margin-top: 20px; text-align: right;">Last updated: ${new Date().toUTCString()}</p>`;
+        adminData.innerHTML = html;
+        
+        // Start live timer updates
+        updateTimersLive();
+      } catch (error) {
+        adminData.innerHTML = `<div class="error" style="display: block;">Error: ${error.message}</div>`;
+      }
+    }
+
+    // Reset a single device - Enhanced to handle local bookings and ESP32 power off
+    async function resetDevice(name, source) {
+      if (!confirm(`Are you sure you want to reset the timer for ${name}?`)) {
+        return;
+      }
+      
+      // Get the button and add a loading indicator
+      const buttons = document.querySelectorAll('.reset-button');
+      buttons.forEach(btn => {
+        if (btn.parentNode.previousElementSibling.previousElementSibling.previousElementSibling.previousElementSibling.textContent.includes(name)) {
+          btn.disabled = true;
+          btn.innerHTML = 'Resetting <div class="loading"></div>';
+        }
+      });
+      
+      try {
+        // Power off PS5 if applicable
+        let powerOffAttempted = false;
+        if (name.includes('PS5')) {
+          try {
+            await sendPowerCommand(name, 'off');
+            powerOffAttempted = true;
+          } catch (powerErr) {
+            console.error(`Error sending power OFF command to ${name}:`, powerErr);
+          }
+        }
+        
+        // Handle local booking reset
+        if (source === 'local') {
+          clearLocalBooking(name);
+          showStatusMessage(
+            powerOffAttempted ? 
+              `Timer for ${name} has been reset and device powered off!` : 
+              `Timer for ${name} has been reset successfully!`, 
+            'success'
+          );
+          fetchConsoles(); // Refresh the device list
+          return;
+        }
+        
+        // Handle server booking reset
+        const response = await fetch(`${API_BASE_URL}/reset-single`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ console: name })
+        });
+        
+        if (response.ok) {
+          showStatusMessage(`Timer for ${name} has been reset successfully!`, 'success');
+          fetchConsoles(); // Refresh the device list
+        } else {
+          // If reset-single fails, try the general reset endpoint as fallback
+          console.warn("reset-single endpoint failed, trying general reset as fallback");
+          const fallbackResponse = await fetch(`${API_BASE_URL}/reset`, {
+            method: 'POST'
+          });
+          
+          if (fallbackResponse.ok) {
+            showStatusMessage(`All timers have been reset as individual reset wasn't available.`, 'success');
+            fetchConsoles(); // Refresh the device list
+          } else {
+            throw new Error('All reset attempts failed');
+          }
+        }
+      } catch (error) {
+        console.error("Reset device error:", error);
+        showStatusMessage(`Failed to reset timer: ${error.message}. Please try again.`, 'error');
+        
+        // Reset the button state
+        buttons.forEach(btn => {
+          if (btn.parentNode.previousElementSibling.previousElementSibling.previousElementSibling.previousElementSibling.textContent.includes(name)) {
+            btn.disabled = false;
+            btn.textContent = 'Reset Timer';
+          }
+        });
+      }
+    }
+
+    // Show user photo in modal using the IMG element ID to avoid large data URL in HTML attributes
+    function showPhotoModalById(imgElementId, id, consoleName, timestamp) {
+      document.getElementById('photoPaymentId').textContent = id;
+      document.getElementById('photoConsoleName').textContent = consoleName;
+      document.getElementById('photoTimestamp').textContent = timestamp;
+      
+      // Get the image source directly from the element
+      const imgElement = document.getElementById(imgElementId);
+      if (imgElement && imgElement.src) {
+        document.getElementById('fullUserPhoto').src = imgElement.src;
+      } else {
+        document.getElementById('fullUserPhoto').src = 'https://via.placeholder.com/400x300?text=No+Photo+Available';
+      }
+      
+      document.getElementById('photoModal').style.display = 'flex';
+    }
+    
+    // Close photo modal
+    function closePhotoModal() {
+      document.getElementById('photoModal').style.display = 'none';
+    }
+
+    // Fetch and display all payments - Enhanced to include payment history and amount
+    async function fetchPayments() {
+      const adminData = document.getElementById('adminData');
+      adminData.innerHTML = '<div style="text-align: center; padding: 20px;">Loading payment data...<div class="loading" style="margin: 10px auto; display: block;"></div></div>';
+
+      try {
+        // Get server payments
+        const response = await fetch(`${API_BASE_URL}/payments`);
+        let serverPayments = [];
+        if (response.ok) {
+          serverPayments = await response.json();
+          // Add source indicator
+          serverPayments = serverPayments.map(p => ({...p, source: 'server', amount: p.amount || calculateAmount(p.minutes, p.players || 1)}));
+        } else {
+          console.error('Failed to fetch server payments');
+        }
+
+        // Get local bookings (active)
+        const localBookings = getLocalBookings().filter(b => !b.adminControl); // Filter out admin control bookings
+        
+        // Get payment history (completed bookings)
+        const paymentHistory = getPaymentHistory();
+        
+        // Get stored photos from localStorage
+        const storedPhotos = getStoredPhotos();
+        
+        // Convert local bookings to payment format and include photos
+        const localPayments = localBookings.map((booking, index) => {
+          const bookingId = `${booking.console}-${booking.endTime}`;
+          const photoData = storedPhotos[bookingId];
+          const players = booking.players || booking.controllers || 1;
+          const amount = booking.amount || calculateAmount(booking.minutes, players);
+          
+          return {
+            id: `local-${index + 1}`,
+            console: booking.console,
+            minutes: booking.minutes,
+            method: booking.method || 'Unknown',
+            user: 'Azonix07',
+            players: players,
+            amount: amount,
+            paid_at: new Date(booking.endTime - (booking.minutes * 60 * 1000)).toISOString(),
+            source: 'local',
+            photoData: photoData, // Store the base64 image directly
+            active: true
+          };
+        });
+        
+        // Process payment history (add photos)
+        const historyPayments = paymentHistory.map(payment => {
+          // Try to find a photo for this payment
+          const photoData = storedPhotos[payment.id];
+          
+          // Ensure amount is present
+          const amount = payment.amount || calculateAmount(payment.minutes, payment.players || payment.controllers || 1);
+          
+          return {
+            ...payment,
+            photoData: photoData,
+            active: false,
+            amount: amount
+          };
+        });
+
+        // Combine all payments and sort by date
+        const allPayments = [...serverPayments, ...localPayments, ...historyPayments].sort((a, b) => 
+          new Date(b.paid_at) - new Date(a.paid_at)
+        );
+        
+        // Create tabs for different payment views
+        let html = '<h3 style="margin-bottom: 15px; color: rgb(255, 111, 0);">Payment History</h3>';
+        
+        html += '<div class="payment-tabs">';
+        html += '<div class="payment-tab active" onclick="switchTab(\'all\')">All Payments</div>';
+        html += '<div class="payment-tab" onclick="switchTab(\'active\')">Active</div>';
+        html += '<div class="payment-tab" onclick="switchTab(\'history\')">History</div>';
+        html += '<div class="payment-tab" onclick="switchTab(\'server\')">Server</div>';
+        html += '<div class="payment-tab" onclick="switchTab(\'local\')">Local</div>';
+        html += '</div>';
+        
+        // All payments tab content
+        html += '<div id="all" class="tab-content active">';
+        html += createPaymentTable(allPayments, true);
+        html += '</div>';
+        
+        // Active payments tab content
+        html += '<div id="active" class="tab-content">';
+        html += createPaymentTable(allPayments.filter(p => p.active), true);
+        html += '</div>';
+        
+        // History payments tab content
+        html += '<div id="history" class="tab-content">';
+        html += createPaymentTable(historyPayments, true);
+        html += '</div>';
+        
+        // Server payments tab content
+        html += '<div id="server" class="tab-content">';
+        html += createPaymentTable(serverPayments.filter(p => p.source === 'server'), true);
+        html += '</div>';
+        
+        // Local payments tab content
+        html += '<div id="local" class="tab-content">';
+        html += createPaymentTable([...localPayments, ...historyPayments.filter(p => p.source === 'local')], true);
+        html += '</div>';
+        
+        adminData.innerHTML = html;
+        
+        // Stop timer updates when viewing payments
+        if (timerUpdateInterval) {
+          clearInterval(timerUpdateInterval);
+          timerUpdateInterval = null;
+        }
+      } catch (error) {
+        adminData.innerHTML = `<div class="error" style="display: block;">Error: ${error.message}</div>`;
+      }
+    }
+    
+    // Switch between payment tabs
+    function switchTab(tabId) {
+      // Hide all tabs and remove active class
+      document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.classList.remove('active');
+      });
+      document.querySelectorAll('.payment-tab').forEach(tab => {
+        tab.classList.remove('active');
+      });
+      
+      // Show selected tab and add active class
+      document.getElementById(tabId).classList.add('active');
+      document.querySelector(`.payment-tab[onclick="switchTab('${tabId}')"]`).classList.add('active');
+    }
+    
+    // Create payment table HTML with user photos and amount - Fixed to properly handle base64 images
+    function createPaymentTable(payments, includePhotos = false) {
+      if (payments.length === 0) {
+        return '<div style="text-align: center; padding: 20px;">No payment records found</div>';
+      }
+      
+      let tableHtml = '<table class="device-table">';
+      tableHtml += '<tr>';
+      
+      if (includePhotos) {
+        tableHtml += '<th>User</th>';
+      }
+      
+      tableHtml += '<th>ID</th>';
+      tableHtml += '<th>Device</th>';
+      tableHtml += '<th>Minutes</th>';
+      tableHtml += '<th>Players</th>';
+      tableHtml += '<th>Amount</th>';
+      tableHtml += '<th>Method</th>';
+      tableHtml += '<th>Time</th>';
+      tableHtml += '<th>Source</th>';
+      tableHtml += '<th>Status</th>';
+      tableHtml += '</tr>';
+      
+      payments.forEach((p, index) => {
+        tableHtml += `<tr>`;
+        
+        // Add user photo thumbnail if includePhotos is true
+        if (includePhotos) {
+          // Generate a unique ID for this photo
+          const photoId = `photo-${p.id}-${index}`;
+          
+          if (p.photoData && isValidDataUrl(p.photoData)) {
+            // Valid data URL - use it directly but don't embed in onclick
+            tableHtml += `<td>
+              <img src="${p.photoData}" alt="User" class="user-thumbnail" 
+                id="${photoId}" onclick="showPhotoModalById('${photoId}', '${p.id}', '${p.console}', '${formatDateTime(p.paid_at)}')">
+            </td>`;
+          } 
+          else if (p.photoUrl && isValidDataUrl(p.photoUrl)) {
+            // Valid URL from photoUrl field
+            tableHtml += `<td>
+              <img src="${p.photoUrl}" alt="User" class="user-thumbnail" 
+                id="${photoId}" onclick="showPhotoModalById('${photoId}', '${p.id}', '${p.console}', '${formatDateTime(p.paid_at)}')">
+            </td>`;
+          }
+          else {
+            // Fallback to placeholder
+            const placeholderUrl = `https://randomuser.me/api/portraits/men/${typeof p.id === 'number' ? p.id % 70 : 1}.jpg`;
+            tableHtml += `<td>
+              <img src="${placeholderUrl}" alt="User" class="user-thumbnail" 
+                id="${photoId}" onclick="showPhotoModalById('${photoId}', '${p.id}', '${p.console}', '${formatDateTime(p.paid_at)}')">
+            </td>`;
+          }
+        }
+        
+        // Get the number of players/controllers
+        const players = p.players || p.controllers || 1;
+        
+        tableHtml += `<td>${p.id}</td>`;
+        tableHtml += `<td>${p.console}</td>`;
+        tableHtml += `<td>${p.minutes}</td>`;
+        tableHtml += `<td>${players}</td>`;
+        tableHtml += `<td class="amount-cell">₹${p.amount || calculateAmount(p.minutes, players)}</td>`;
+        tableHtml += `<td>${p.method || 'Unknown'}</td>`;
+        tableHtml += `<td>${formatDateTime(p.paid_at)}</td>`;
+        tableHtml += `<td>
+          ${p.source === 'local' ? 
+            '<span class="source-badge local-source">Local</span>' : 
+            '<span class="source-badge server-source">Server</span>'}
+        </td>`;
+        tableHtml += `<td>
+          ${p.active ? 
+            '<span style="color: #4CAF50; font-weight: 600;">Active</span>' : 
+            '<span style="color: #888; font-weight: 600;">Completed</span>'}
+        </td>`;
+        tableHtml += `</tr>`;
+      });
+      
+      tableHtml += '</table>';
+      return tableHtml;
+    }
+
+    // Reset all bookings - Enhanced to handle local bookings and power off PS5s
+    async function resetAllBookings() {
+      if (!confirm('Are you sure you want to reset ALL device timers? This cannot be undone.')) {
+        return;
+      }
+      
+      try {
+                const adminData = document.getElementById('adminData');
+        adminData.innerHTML = '<div style="text-align: center; padding: 20px;">Resetting all bookings...<div class="loading" style="margin: 10px auto; display: block;"></div></div>';
+        
+        // Get all PS5 consoles that are currently booked
+        const psConsoles = [];
+        const bookings = getLocalBookings();
+        bookings.forEach(booking => {
+          if (booking.console.includes('PS5')) {
+            psConsoles.push(booking.console);
+          }
+        });
+        
+        // Clear all local bookings
+        clearAllBookings();
+        
+        // Send power OFF commands to all PS5 consoles
+        if (psConsoles.length > 0) {
+          showStatusMessage(`Powering off ${psConsoles.length} PS5 consoles...`, 'info');
+          
+          const powerOffPromises = psConsoles.map(consoleName => {
+            return sendPowerCommand(consoleName, 'off')
+              .catch(err => console.error(`Error turning off ${consoleName}:`, err));
+          });
+          
+          // Wait for all power commands to complete
+          await Promise.allSettled(powerOffPromises);
+        }
+        
+        // Reset server bookings
+        let serverResetSuccessful = true;
+        try {
+          const response = await fetch(`${API_BASE_URL}/reset`, { method: 'POST' });
+          if (!response.ok) {
+            console.error('Failed to reset server bookings');
+            serverResetSuccessful = false;
+          }
+        } catch (err) {
+          console.error('Error resetting server bookings:', err);
+          serverResetSuccessful = false;
+        }
+        
+        if (serverResetSuccessful) {
+          showStatusMessage('All device timers have been reset successfully!', 'success');
+        } else {
+          showStatusMessage('Local bookings reset successfully. Server bookings may not have been reset.', 'success');
+        }
+        
+        // Refresh device list after reset
+        setTimeout(fetchConsoles, 1000);
+      } catch (error) {
+        showStatusMessage(`Failed to reset some bookings: ${error.message}`, 'error');
+        adminData.innerHTML = `<div class="error" style="display: block;">Error: ${error.message}</div>`;
+      }
+    }
+
+    function goBack() {
+      // Clear timer interval when leaving the page
+      if (timerUpdateInterval) {
+        clearInterval(timerUpdateInterval);
+      }
+      window.location.href = 'index.html';
+    }
+    
+    // Clean up event listeners and intervals when page unloads
+    window.addEventListener('beforeunload', () => {
+      if (timerUpdateInterval) {
+        clearInterval(timerUpdateInterval);
+      }
+    });
+    
+    // Close photo modal when clicking outside
+    window.onclick = function(event) {
+      const photoModal = document.getElementById('photoModal');
+      if (event.target === photoModal) {
+        photoModal.style.display = "none";
+      }
+    }
+    
+    // Initialize payment history if it doesn't exist
+    if (!localStorage.getItem('paymentHistory')) {
+      localStorage.setItem('paymentHistory', JSON.stringify([]));
+    }
+    
+    // Initialize photo history if it doesn't exist
+    if (!localStorage.getItem('photoHistory')) {
+      localStorage.setItem('photoHistory', JSON.stringify({}));
+    }
+    
+    // Check for expired bookings on page load and turn off PS5s if they've expired
+    (async function checkExpiredBookings() {
+      const bookings = JSON.parse(localStorage.getItem('consoleBookings') || '[]');
       const currentTime = Date.now();
       const activeBookings = [];
+      const expiredPS5s = [];
+      let hasExpired = false;
       
       bookings.forEach(booking => {
-        // Skip admin controlled devices - don't expire them
+        // Skip admin control bookings
         if (booking.adminControl) {
           activeBookings.push(booking);
           return;
@@ -847,972 +1775,38 @@
         if (booking.endTime > currentTime) {
           activeBookings.push(booking);
         } else {
-          // Move expired booking to payment history
           moveBookingToPaymentHistory(booking);
+          hasExpired = true;
+          
+          // Track expired PS5s for power off
+          if (booking.console.includes('PS5')) {
+            expiredPS5s.push(booking.console);
+          }
         }
       });
       
-      // Update localStorage with only active bookings
-      localStorage.setItem('consoleBookings', JSON.stringify(activeBookings));
-      return activeBookings;
-    } catch (e) {
-      console.error('Error parsing local bookings:', e);
-      return [];
-    }
-  }
-  
-  // Get payment history from localStorage
-  function getPaymentHistory() {
-    const historyJSON = localStorage.getItem('paymentHistory');
-    if (!historyJSON) {
-      return [];
-    }
-    
-    try {
-      return JSON.parse(historyJSON);
-    } catch (e) {
-      console.error('Error parsing payment history:', e);
-      return [];
-    }
-  }
-  
-  // Move a booking to payment history when it expires
-  function moveBookingToPaymentHistory(booking) {
-    // Skip admin controlled devices
-    if (booking.adminControl) return;
-    
-    // Get existing payment history
-    let history = getPaymentHistory();
-    
-    // Get amount from booking or calculate based on current pricing matrix
-    const amount = booking.amount || calculateAmount(booking.minutes, booking.players || booking.controllers || 1);
-    
-    // Create payment record from booking
-    const payment = {
-      id: `local-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-      console: booking.console,
-      minutes: booking.minutes,
-      method: booking.method || 'Unknown',
-      user: 'Azonix07',
-      players: booking.players || booking.controllers || 1,
-      amount: amount,
-      paid_at: new Date(booking.endTime - (booking.minutes * 60 * 1000)).toISOString(),
-      completed_at: new Date().toISOString(),
-      source: 'local'
-    };
-    
-    // Add to history
-    history.push(payment);
-    
-    // Limit history size (optional, to prevent localStorage from growing too large)
-    if (history.length > 1000) {
-      history = history.slice(-1000); // Keep only the last 1000 payments
-    }
-    
-    // Save updated history
-    localStorage.setItem('paymentHistory', JSON.stringify(history));
-    
-    // Also check for photo and move it to history if available
-    movePhotoToPaymentHistory(booking, payment.id);
-  }
-  
-  // Calculate amount based on duration and players using the new pricing matrix
-  function calculateAmount(minutes, players) {
-    // Define the pricing matrix
-    const pricingMatrix = {
-      30: { 1: 70, 2: 90, 4: 150 },
-      60: { 1: 130, 2: 150, 4: 210 },
-      90: { 1: 170, 2: 200, 4: 270 },
-      120: { 1: 210, 2: 240, 4: 300 }
-    };
-    
-    // Get the price based on duration and players
-    if (pricingMatrix[minutes] && pricingMatrix[minutes][players]) {
-      return pricingMatrix[minutes][players];
-    }
-    
-    // Default fallback calculation
-    return minutes * 2 + (players * 10);
-  }
-  
-  // Move photo to payment history
-  function movePhotoToPaymentHistory(booking, paymentId) {
-    const photosJSON = localStorage.getItem('userPhotos');
-    if (!photosJSON) return;
-    
-    try {
-      const photos = JSON.parse(photosJSON);
-      const bookingId = `${booking.console}-${booking.endTime}`;
-      
-      if (photos[bookingId]) {
-        // Get photo history storage
-        let photoHistory = {};
-        const photoHistoryJSON = localStorage.getItem('photoHistory');
-        if (photoHistoryJSON) {
-          photoHistory = JSON.parse(photoHistoryJSON);
-        }
+      if (hasExpired) {
+        localStorage.setItem('consoleBookings', JSON.stringify(activeBookings));
         
-        // Store the photo in history with the payment ID
-        photoHistory[paymentId] = photos[bookingId];
-        
-        // Save updated photo history
-        localStorage.setItem('photoHistory', JSON.stringify(photoHistory));
-        
-        // Clean up original photo entry
-        delete photos[bookingId];
-        localStorage.setItem('userPhotos', JSON.stringify(photos));
-      }
-    } catch (e) {
-      console.error('Error moving photo to history:', e);
-    }
-  }
-  
-  // Move an expired booking to history by console name and turn off PS5
-  async function moveExpiredBookingToHistory(consoleName) {
-    const bookings = getLocalBookings();
-    const booking = bookings.find(b => b.console === consoleName);
-    
-    if (booking && !booking.adminControl) {
-      moveBookingToPaymentHistory(booking);
-      clearLocalBooking(consoleName);
-      
-      // Turn off PS5 when timer expires
-      if (consoleName.includes('PS5')) {
-        try {
-          await sendPowerCommand(consoleName, 'off');
-          console.log(`Timer expired: Power OFF command sent to ${consoleName}`);
-        } catch (err) {
-          console.error(`Error turning off ${consoleName} after timer expired:`, err);
-        }
-      }
-    }
-  }
-
-  // Get stored photos from localStorage
-  function getStoredPhotos() {
-    // Combine current photos and historical photos
-    const photos = {};
-    
-    try {
-      // Current photos
-      const photosJSON = localStorage.getItem('userPhotos');
-      if (photosJSON) {
-        Object.assign(photos, JSON.parse(photosJSON));
-      }
-      
-      // Historical photos
-      const photoHistoryJSON = localStorage.getItem('photoHistory');
-      if (photoHistoryJSON) {
-        Object.assign(photos, JSON.parse(photoHistoryJSON));
-      }
-      
-      return photos;
-    } catch (e) {
-      console.error('Error parsing stored photos:', e);
-      return {};
-    }
-  }
-
-  // Clear local booking for a specific console
-  function clearLocalBooking(consoleName) {
-    const bookings = getLocalBookings();
-    const booking = bookings.find(b => b.console === consoleName);
-    
-    if (booking) {
-      // Skip admin controlled devices for payment history
-      if (!booking.adminControl) {
-        // Move booking to payment history before clearing it
-        moveBookingToPaymentHistory(booking);
-      }
-    }
-    
-    // Update local storage with filtered bookings
-    const updatedBookings = bookings.filter(b => b.console !== consoleName);
-    localStorage.setItem('consoleBookings', JSON.stringify(updatedBookings));
-  }
-
-  // Clear all local bookings
-  function clearAllBookings() {
-    // Move non-admin bookings to payment history before clearing
-    const bookings = getLocalBookings();
-    bookings.forEach(booking => {
-      if (!booking.adminControl) {
-        moveBookingToPaymentHistory(booking);
-      }
-    });
-    
-    // Clear the active bookings
-    localStorage.setItem('consoleBookings', JSON.stringify([]));
-  }
-  
-  // Send power command to ESP32
-  async function sendPowerCommand(consoleName, action) {
-    try {
-      showStatusMessage(`Sending ${action} command to ${consoleName}...`, 'info');
-      
-      // Fixed API URL - Using proper API endpoint
-      const response = await fetch(`${API_BASE_URL}/api/power-control`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          console: consoleName,
-          action: action
-        })
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Unknown error');
-      }
-      
-      const result = await response.json();
-      showStatusMessage(`${result.message}`, 'success');
-      return true;
-    } catch (error) {
-      console.error(`Error sending power ${action} command to ${consoleName}:`, error);
-      showStatusMessage(`Failed to send power ${action} command to ${consoleName}: ${error.message}`, 'error');
-      return false;
-    }
-  }
-</script>
-<script>
-  // Check ESP32 status
-  async function checkESP32Status() {
-    const adminData = document.getElementById('adminData');
-    adminData.innerHTML = '<div style="text-align: center; padding: 20px;">Checking ESP32 status...<div class="loading" style="margin: 10px auto; display: block;"></div></div>';
-    
-    try {
-      // Fixed API URL - Using proper API endpoint
-      const response = await fetch(`${API_BASE_URL}/api/esp32-status`);
-      
-      if (!response.ok) {
-        throw new Error(`API returned status ${response.status}`);
-      }
-      
-      const data = await response.json();
-      esp32Status = {};
-      
-      // Generate HTML for ESP32 status table
-      let html = '<h3 style="margin-bottom: 15px; color: rgb(255, 111, 0);">ESP32 Controller Status</h3>';
-      html += '<table class="device-table">';
-      html += '<tr>';
-      html += '<th>Console</th>';
-      html += '<th>IP Address</th>';
-      html += '<th>Status</th>';
-      html += '<th>Actions</th>';
-      html += '</tr>';
-      
-      data.controllers.forEach((controller, index) => {
-        esp32Status[controller.console] = controller.status;
-        const powerOnId = `power-on-${index}`;
-        const powerOffId = `power-off-${index}`;
-        
-        html += `<tr>`;
-        html += `<td>${controller.console}</td>`;
-        html += `<td>${controller.ip}</td>`;
-        html += `<td>
-          <span class="esp32-status esp32-${controller.status}"></span>
-          ${controller.status === 'online' ? 'Online' : 'Offline'}
-        </td>`;
-        html += `<td>
-          ${controller.status === 'online' ? 
-            `<button class="power-button power-on" id="${powerOnId}" data-console="${controller.console}">Power ON</button>
-             <button class="power-button power-off" id="${powerOffId}" data-console="${controller.console}">Power OFF</button>` : 
-            '<button class="power-button" disabled>Unavailable</button>'}
-        </td>`;
-        html += `</tr>`;
-      });
-      
-      html += '</table>';
-      html += `<p style="font-size: 0.9rem; color: #aaa; margin-top: 20px; text-align: right;">
-        Last updated: ${new Date(data.timestamp).toLocaleString()}</p>`;
-      
-      adminData.innerHTML = html;
-      
-      // Add event listeners to the power buttons
-      setTimeout(() => {
-        data.controllers.forEach((controller, index) => {
-          if (controller.status === 'online') {
-            const powerOnBtn = document.getElementById(`power-on-${index}`);
-            const powerOffBtn = document.getElementById(`power-off-${index}`);
-            
-            if (powerOnBtn) {
-              powerOnBtn.addEventListener('click', () => sendPowerCommand(controller.console, 'on'));
-            }
-            
-            if (powerOffBtn) {
-              powerOffBtn.addEventListener('click', () => sendPowerCommand(controller.console, 'off'));
+        // Turn off any PS5s that have expired
+        if (expiredPS5s.length > 0) {
+          console.log(`Turning off ${expiredPS5s.length} expired PS5 consoles on page load`);
+          
+          for (const consoleName of expiredPS5s) {
+            try {
+              await sendPowerCommand(consoleName, 'off');
+              console.log(`Power OFF command sent to expired console ${consoleName}`);
+            } catch (err) {
+              console.error(`Error turning off expired console ${consoleName}:`, err);
             }
           }
-        });
-      }, 100);
-    } catch (error) {
-      adminData.innerHTML = `<div class="error" style="display: block;">
-        Error checking ESP32 status: ${error.message}<br>
-        <button class="admin-button" style="margin-top: 15px;" id="backToConsoles">Back to Consoles</button>
-      </div>`;
-      
-      setTimeout(() => {
-        const backBtn = document.getElementById('backToConsoles');
-        if (backBtn) {
-          backBtn.addEventListener('click', fetchConsoles);
-        }
-      }, 100);
-    }
-  }
-  
-  // Toggle admin power control for a device
-  async function togglePower(consoleName, currentState) {
-    const newState = !currentState;
-    
-    // Get current bookings
-    const bookings = getLocalBookings();
-    
-    if (newState) {
-      // Turn ON - Send power ON command to ESP32 if it's a PS5
-      if (consoleName.includes('PS5')) {
-        try {
-          const success = await sendPowerCommand(consoleName, 'on');
-          if (!success) {
-            showStatusMessage(`Warning: Failed to send power ON command to ${consoleName}, but booking will still be created`, 'info');
-          }
-        } catch (err) {
-          console.error(`Error sending power ON command to ${consoleName}:`, err);
-          showStatusMessage(`Warning: Failed to send power ON command to ${consoleName}, but booking will still be created`, 'info');
         }
       }
-      
-      // Add admin control booking
-      const existingIndex = bookings.findIndex(b => b.console === consoleName);
-      
-      // Create admin booking object
-      const adminBooking = {
-        console: consoleName,
-        adminControl: true,
-        booked: true,
-        endTime: Date.now() + (365 * 24 * 60 * 60 * 1000), // Set far future date (1 year)
-        method: 'admin'
-      };
-      
-      if (existingIndex >= 0) {
-        // Replace existing booking with admin booking
-        bookings[existingIndex] = adminBooking;
-      } else {
-        // Add new admin booking
-        bookings.push(adminBooking);
-      }
-      
-      // Save updated bookings
-      localStorage.setItem('consoleBookings', JSON.stringify(bookings));
-      showStatusMessage(`${consoleName} turned ON by admin`, 'success');
-    } else {
-      // Turn OFF - Send power OFF command to ESP32 if it's a PS5
-      if (consoleName.includes('PS5')) {
-        try {
-          const success = await sendPowerCommand(consoleName, 'off');
-          if (!success) {
-            showStatusMessage(`Warning: Failed to send power OFF command to ${consoleName}, but booking will still be removed`, 'info');
-          }
-        } catch (err) {
-          console.error(`Error sending power OFF command to ${consoleName}:`, err);
-          showStatusMessage(`Warning: Failed to send power OFF command to ${consoleName}, but booking will still be removed`, 'info');
-        }
-      }
-      
-      // Remove admin control booking
-      const filteredBookings = bookings.filter(b => b.console !== consoleName);
-      
-      // Update bookings with filtered list
-      localStorage.setItem('consoleBookings', JSON.stringify(filteredBookings));
-      showStatusMessage(`${consoleName} turned OFF by admin`, 'success');
-    }
-    
-    // Refresh the consoles display
-    fetchConsoles();
-  }
+    })();
 
-  // Admin panel functionality - Enhanced to include local bookings and admin control
-  async function fetchConsoles() {
-    debug("Fetching consoles");
-    const adminData = document.getElementById('adminData');
-    adminData.innerHTML = '<div style="text-align: center; padding: 20px;">Loading device data...<div class="loading" style="margin: 10px auto; display: block;"></div></div>';
-
-    try {
-      // Get server consoles - FIXED API URL
-      const response = await fetch(`${API_BASE_URL}/api/status`);
-      let serverConsoles = [];
-      if (response.ok) {
-        serverConsoles = await response.json();
-      } else {
-        console.error('Failed to fetch server consoles');
-      }
-
-      // Get local bookings
-      const localBookings = getLocalBookings();
-      const localBookingsMap = {};
-      localBookings.forEach(b => {
-        localBookingsMap[b.console] = b;
-      });
-
-      // Merge server consoles with local bookings
-      consoleData = serverConsoles.map(console => {
-        const localBooking = localBookingsMap[console.name];
-        
-        if (localBooking) {
-          const remainingTime = Math.max(0, localBooking.endTime - Date.now());
-          return {
-            ...console,
-            booked: true,
-            remainingTime: remainingTime,
-            source: 'local',
-            adminControl: localBooking.adminControl || false
-          };
-        }
-        
-        return {
-          ...console,
-          source: 'server',
-          adminControl: false
-        };
-      });
-      
-      // Generate HTML for the table
-      let html = '<h3 style="margin-bottom: 15px; color: rgb(255, 111, 0);">Device Status</h3>';
-      html += '<table class="device-table">';
-      html += '<tr>';
-      html += '<th>Device Name</th>';
-      html += '<th>Status</th>';
-      html += '<th>Control</th>';
-      html += '<th>Timer</th>';
-      html += '<th>Actions</th>';
-      html += '</tr>';
-      
-      consoleData.forEach((c, index) => {
-        // Determine status text and style
-        let status, statusClass;
-        
-        if (c.adminControl) {
-          status = 'Admin Control';
-          statusClass = 'admin-control';
-        } else if (c.booked) {
-          status = 'Booked';
-          statusClass = 'powered-on';
-        } else {
-          status = 'Available';
-          statusClass = 'powered-off';
-        }
-        
-        // Create a unique ID for this timer cell for live updates
-        const timerId = `timer-${c.name.replace(/[^a-zA-Z0-9]/g, '-')}`;
-        
-        // Check if this is a PS5 and add ESP32 status indicator
-        const isPS5 = c.name.includes('PS5');
-        const esp32StatusClass = esp32Status[c.name] ? 
-          `esp32-${esp32Status[c.name]}` : 'esp32-unknown';
-        
-        const resetButtonId = `reset-${index}`;
-        const powerButtonId = `power-${index}`;
-        
-        html += `<tr>`;
-        html += `<td>${c.name}${isPS5 ? ` <span class="esp32-status ${esp32StatusClass}"></span>` : ''}</td>`;
-        html += `<td><span class="${statusClass}">${status}</span></td>`;
-        html += `<td>
-          ${c.source === 'local' ? 
-            '<span class="source-badge local-source">Local</span>' : 
-            '<span class="source-badge server-source">Server</span>'}
-        </td>`;
-        html += `<td><span id="${timerId}" class="timer-cell">
-          ${c.adminControl ? 'Admin Use' : (c.booked ? formatTime(c.remainingTime) : '-')}
-        </span></td>`;
-        html += `<td>
-          ${c.booked ? 
-            `<button class="reset-button" id="${resetButtonId}" data-name="${c.name}" data-source="${c.source}">Reset</button>` : 
-            ''}
-          <button class="power-button ${c.adminControl ? 'power-on' : 'power-off'}" 
-            id="${powerButtonId}" 
-            data-name="${c.name}" 
-            data-state="${c.adminControl || false}">
-            ${c.adminControl ? 'Turn Off' : 'Turn On'}
-          </button>
-        </td>`;
-        html += `</tr>`;
-      });
-      
-      html += '</table>';
-      html += `<p style="font-size: 0.9rem; color: #aaa; margin-top: 20px; text-align: right;">Last updated: ${new Date().toUTCString()}</p>`;
-      adminData.innerHTML = html;
-      
-      // Attach event listeners to dynamically created buttons
-      setTimeout(() => {
-        // Add click event listeners to reset buttons
-        document.querySelectorAll('.reset-button').forEach(button => {
-          button.addEventListener('click', function() {
-            const name = this.getAttribute('data-name');
-            const source = this.getAttribute('data-source');
-            resetDevice(name, source);
-          });
-        });
-        
-        // Add click event listeners to power buttons
-        document.querySelectorAll('.power-button').forEach(button => {
-          button.addEventListener('click', function() {
-            const name = this.getAttribute('data-name');
-            const state = this.getAttribute('data-state') === 'true';
-            togglePower(name, state);
-          });
-        });
-      }, 100);
-      
-      // Start live timer updates
-      updateTimersLive();
-    } catch (error) {
-      adminData.innerHTML = `<div class="error" style="display: block;">Error: ${error.message}</div>`;
-    }
-  }
-
-  // Initialize event listeners once the DOM is fully loaded
-  document.addEventListener("DOMContentLoaded", function() {
-    debug("DOM fully loaded, setting up event listeners");
-
-    document.getElementById('btnViewPayments').addEventListener('click', fetchPayments);
-
-    // Initialize admin buttons
-      document.getElementById('btnViewDevices').addEventListener('click', fetchConsoles);
-  document.getElementById('btnViewPayments').addEventListener('click', fetchPayments); // FIXED: Properly connect to payments function
-  document.getElementById('btnResetAll').addEventListener('click', resetAllBookings);
-  document.getElementById('btnESP32Status').addEventListener('click', checkESP32Status);
-  document.getElementById('btnGoBack').addEventListener('click', function() {
-    window.location.href = 'index.html';
-  });
-
-  // Close photo modal
-  document.getElementById('closePhotoModal').addEventListener('click', closePhotoModal);
-  
-  // Add keyboard support for login
-  document.addEventListener('keydown', function(event) {
-    // Only process if login modal is visible
-    if (loginModal.style.display !== 'none') {
-      const key = event.key;
-      
-      // Handle numeric keys
-      if (!isNaN(parseInt(key)) && key >= '0' && key <= '9') {
-        addDigit(parseInt(key));
-      }
-      
-      // Handle Enter key
-      if (key === 'Enter') {
-        submitPassword();
-      }
-      
-      // Handle Escape key
-      if (key === 'Escape') {
-        cancelLogin();
-      }
-      
-      // Handle Backspace key
-      if (key === 'Backspace') {
-        clearPassword();
-      }
-    }
-  });
-
-  // Emergency access (optional)
-  document.getElementById('emergencyAccess').addEventListener('click', function() {
-    loginModal.style.display = 'none';
-    adminPanel.style.display = 'block';
-    setTimeout(fetchConsoles, 100);
-  });
-  
-  // Optionally show emergency button after delay
-  setTimeout(function() {
-    if (loginModal.style.display !== 'none') {
-      document.getElementById('emergencyAccess').style.display = 'block';
-    }
-  }, 10000);
-    document.getElementById('btnResetAll').addEventListener('click', function() {
-      if (confirm('Are you sure you want to reset ALL bookings?')) {
-        clearAllBookings();
-        showStatusMessage('All bookings have been reset successfully!', 'success');
-        setTimeout(fetchConsoles, 100);
-      }
-    });
-    document.getElementById('btnESP32Status').addEventListener('click', checkESP32Status);
-    document.getElementById('btnGoBack').addEventListener('click', function() {
-      window.location.href = 'index.html';
-    });
-
-    // Close photo modal
-    document.getElementById('closePhotoModal').addEventListener('click', function() {
-      document.getElementById('photoModal').style.display = 'none';
-    });
-    
-    // Add keyboard support for login
-    document.addEventListener('keydown', function(event) {
-      // Only process if login modal is visible
-      if (loginModal.style.display !== 'none') {
-        const key = event.key;
-        
-        // Handle numeric keys
-        if (!isNaN(parseInt(key)) && key >= '0' && key <= '9') {
-          addDigit(parseInt(key));
-        }
-        
-        // Handle Enter key
-        if (key === 'Enter') {
-          submitPassword();
-        }
-        
-        // Handle Escape key
-        if (key === 'Escape') {
-          cancelLogin();
-        }
-        
-        // Handle Backspace key
-        if (key === 'Backspace') {
-          clearPassword();
-        }
-      }
-    });
-
-    // Emergency access (optional)
-    document.getElementById('emergencyAccess').addEventListener('click', function() {
-      loginModal.style.display = 'none';
-      adminPanel.style.display = 'block';
-      setTimeout(fetchConsoles, 100);
-    });
-    
-    // Optionally show emergency button after delay
-    setTimeout(function() {
-      if (loginModal.style.display !== 'none') {
-        document.getElementById('emergencyAccess').style.display = 'block';
-      }
-    }, 10000);
-  });
-
-  // Add this at the end to fix any API URL issues
-  console.log(`API URL set to: ${API_BASE_URL}/api/`);
-</script>
-<script>
-  // Fetch and display all payments - Enhanced to include payment history and amount
-  async function fetchPayments() {
-    debug("Fetching payments");
-    const adminData = document.getElementById('adminData');
-    adminData.innerHTML = '<div style="text-align: center; padding: 20px;">Loading payment data...<div class="loading" style="margin: 10px auto; display: block;"></div></div>';
-
-    try {
-      // Get server payments - FIXED API URL
-      const response = await fetch(`${API_BASE_URL}/api/payments`);
-      let serverPayments = [];
-      if (response.ok) {
-        serverPayments = await response.json();
-        // Add source indicator
-        serverPayments = serverPayments.map(p => ({...p, source: 'server', amount: p.amount || calculateAmount(p.minutes, p.players || 1)}));
-      } else {
-        console.error('Failed to fetch server payments');
-      }
-
-      // Get local bookings (active)
-      const localBookings = getLocalBookings().filter(b => !b.adminControl); // Filter out admin control bookings
-      
-      // Get payment history (completed bookings)
-      const paymentHistory = getPaymentHistory();
-      
-      // Get stored photos from localStorage
-      const storedPhotos = getStoredPhotos();
-      
-      // Convert local bookings to payment format and include photos
-      const localPayments = localBookings.map((booking, index) => {
-        const bookingId = `${booking.console}-${booking.endTime}`;
-        const photoData = storedPhotos[bookingId];
-        const players = booking.players || booking.controllers || 1;
-        const amount = booking.amount || calculateAmount(booking.minutes, players);
-        
-        return {
-          id: `local-${index + 1}`,
-          console: booking.console,
-          minutes: booking.minutes,
-          method: booking.method || 'Unknown',
-          user: 'Azonix07',
-          players: players,
-          amount: amount,
-          paid_at: new Date(booking.endTime - (booking.minutes * 60 * 1000)).toISOString(),
-          source: 'local',
-          photoData: photoData, // Store the base64 image directly
-          active: true
-        };
-      });
-      
-      // Process payment history (add photos)
-      const historyPayments = paymentHistory.map(payment => {
-        // Try to find a photo for this payment
-        const photoData = storedPhotos[payment.id];
-        
-        // Ensure amount is present
-        const amount = payment.amount || calculateAmount(payment.minutes, payment.players || payment.controllers || 1);
-        
-        return {
-          ...payment,
-          photoData: photoData,
-          active: false,
-          amount: amount
-        };
-      });
-
-      // Combine all payments and sort by date
-      const allPayments = [...serverPayments, ...localPayments, ...historyPayments].sort((a, b) => 
-        new Date(b.paid_at) - new Date(a.paid_at)
-      );
-      
-      // Create tabs for different payment views
-      let html = '<h3 style="margin-bottom: 15px; color: rgb(255, 111, 0);">Payment History</h3>';
-      
-      html += '<div class="payment-tabs">';
-      html += '<div class="payment-tab active" id="tab-all">All Payments</div>';
-      html += '<div class="payment-tab" id="tab-active">Active</div>';
-      html += '<div class="payment-tab" id="tab-history">History</div>';
-      html += '<div class="payment-tab" id="tab-server">Server</div>';
-      html += '<div class="payment-tab" id="tab-local">Local</div>';
-      html += '</div>';
-      
-      // All payments tab content
-      html += '<div id="all" class="tab-content active">';
-      html += createPaymentTable(allPayments, true);
-      html += '</div>';
-      
-      // Active payments tab content
-      html += '<div id="active" class="tab-content">';
-      html += createPaymentTable(allPayments.filter(p => p.active), true);
-      html += '</div>';
-      
-      // History payments tab content
-      html += '<div id="history" class="tab-content">';
-      html += createPaymentTable(historyPayments, true);
-      html += '</div>';
-      
-      // Server payments tab content
-      html += '<div id="server" class="tab-content">';
-      html += createPaymentTable(serverPayments.filter(p => p.source === 'server'), true);
-      html += '</div>';
-      
-      // Local payments tab content
-      html += '<div id="local" class="tab-content">';
-      html += createPaymentTable([...localPayments, ...historyPayments.filter(p => p.source === 'local')], true);
-      html += '</div>';
-      
-      adminData.innerHTML = html;
-      
-      // Add event listeners to payment tabs
-      setTimeout(() => {
-        document.getElementById('tab-all').addEventListener('click', () => switchTab('all'));
-        document.getElementById('tab-active').addEventListener('click', () => switchTab('active'));
-        document.getElementById('tab-history').addEventListener('click', () => switchTab('history'));
-        document.getElementById('tab-server').addEventListener('click', () => switchTab('server'));
-        document.getElementById('tab-local').addEventListener('click', () => switchTab('local'));
-        
-        // Add photo thumbnail click handlers
-        document.querySelectorAll('.user-thumbnail').forEach(thumbnail => {
-          thumbnail.addEventListener('click', function() {
-            const id = this.getAttribute('data-id');
-            const consoleName = this.getAttribute('data-console');
-            const timestamp = this.getAttribute('data-timestamp');
-            showPhotoModalById(this.id, id, consoleName, timestamp);
-          });
-        });
-      }, 100);
-      
-      // Stop timer updates when viewing payments
-      if (timerUpdateInterval) {
-        clearInterval(timerUpdateInterval);
-        timerUpdateInterval = null;
-      }
-    } catch (error) {
-      adminData.innerHTML = `<div class="error" style="display: block;">Error: ${error.message}</div>`;
-    }
-  }
-  
-  // Create payment table HTML with user photos and amount
-  function createPaymentTable(payments, includePhotos = false) {
-    if (payments.length === 0) {
-      return '<div style="text-align: center; padding: 20px;">No payment records found</div>';
-    }
-    
-    let tableHtml = '<table class="device-table">';
-    tableHtml += '<tr>';
-    
-    if (includePhotos) {
-      tableHtml += '<th>User</th>';
-    }
-    
-    tableHtml += '<th>ID</th>';
-    tableHtml += '<th>Device</th>';
-    tableHtml += '<th>Minutes</th>';
-    tableHtml += '<th>Players</th>';
-    tableHtml += '<th>Amount</th>';
-    tableHtml += '<th>Method</th>';
-    tableHtml += '<th>Time</th>';
-    tableHtml += '<th>Source</th>';
-    tableHtml += '<th>Status</th>';
-    tableHtml += '</tr>';
-    
-    payments.forEach((p, index) => {
-      tableHtml += `<tr>`;
-      
-      // Add user photo thumbnail if includePhotos is true
-      if (includePhotos) {
-        // Generate a unique ID for this photo
-        const photoId = `photo-${p.id}-${index}`;
-        
-        if (p.photoData && isValidDataUrl(p.photoData)) {
-          // Valid data URL - use it directly but don't embed in onclick
-          tableHtml += `<td>
-            <img src="${p.photoData}" alt="User" class="user-thumbnail" 
-              id="${photoId}" data-id="${p.id}" data-console="${p.console}" data-timestamp="${formatDateTime(p.paid_at)}">
-          </td>`;
-        } 
-        else if (p.photoUrl && isValidDataUrl(p.photoUrl)) {
-          // Valid URL from photoUrl field
-          tableHtml += `<td>
-            <img src="${p.photoUrl}" alt="User" class="user-thumbnail" 
-              id="${photoId}" data-id="${p.id}" data-console="${p.console}" data-timestamp="${formatDateTime(p.paid_at)}">
-          </td>`;
-        }
-        else {
-          // Fallback to placeholder
-          const placeholderUrl = `https://randomuser.me/api/portraits/men/${typeof p.id === 'number' ? p.id % 70 : 1}.jpg`;
-          tableHtml += `<td>
-            <img src="${placeholderUrl}" alt="User" class="user-thumbnail" 
-              id="${photoId}" data-id="${p.id}" data-console="${p.console}" data-timestamp="${formatDateTime(p.paid_at)}">
-          </td>`;
-        }
-      }
-      
-      // Get the number of players/controllers
-      const players = p.players || p.controllers || 1;
-      
-      tableHtml += `<td>${p.id}</td>`;
-      tableHtml += `<td>${p.console}</td>`;
-      tableHtml += `<td>${p.minutes}</td>`;
-      tableHtml += `<td>${players}</td>`;
-      tableHtml += `<td class="amount-cell">₹${p.amount || calculateAmount(p.minutes, players)}</td>`;
-      tableHtml += `<td>${p.method || 'Unknown'}</td>`;
-      tableHtml += `<td>${formatDateTime(p.paid_at)}</td>`;
-      tableHtml += `<td>
-        ${p.source === 'local' ? 
-          '<span class="source-badge local-source">Local</span>' : 
-          '<span class="source-badge server-source">Server</span>'}
-      </td>`;
-      tableHtml += `<td>
-        ${p.active ? 
-          '<span style="color: #4CAF50; font-weight: 600;">Active</span>' : 
-          '<span style="color: #888; font-weight: 600;">Completed</span>'}
-      </td>`;
-      tableHtml += `</tr>`;
-    });
-    
-    tableHtml += '</table>';
-    return tableHtml;
-  }
-
-  // Show user photo in modal using the IMG element ID
-  function showPhotoModalById(imgElementId, id, consoleName, timestamp) {
-    document.getElementById('photoPaymentId').textContent = id;
-    document.getElementById('photoConsoleName').textContent = consoleName;
-    document.getElementById('photoTimestamp').textContent = timestamp;
-    
-    // Get the image source directly from the element
-    const imgElement = document.getElementById(imgElementId);
-    if (imgElement && imgElement.src) {
-      document.getElementById('fullUserPhoto').src = imgElement.src;
-    } else {
-      document.getElementById('fullUserPhoto').src = 'https://via.placeholder.com/400x300?text=No+Photo+Available';
-    }
-    
-    document.getElementById('photoModal').style.display = 'flex';
-  }
-  
-  // Close photo modal
-  function closePhotoModal() {
-    document.getElementById('photoModal').style.display = 'none';
-  }
-
-  // Switch between payment tabs
-  function switchTab(tabId) {
-    // Hide all tabs and remove active class
-    document.querySelectorAll('.tab-content').forEach(tab => {
-      tab.classList.remove('active');
-    });
-    document.querySelectorAll('.payment-tab').forEach(tab => {
-      tab.classList.remove('active');
-    });
-    
-    // Show selected tab and add active class
-    document.getElementById(tabId).classList.add('active');
-    document.getElementById(`tab-${tabId}`).classList.add('active');
-  }
-
-  // Reset all bookings - Enhanced to handle local bookings and power off PS5s
-  async function resetAllBookings() {
-    if (!confirm('Are you sure you want to reset ALL device timers? This cannot be undone.')) {
-      return;
-    }
-    
-    try {
-      const adminData = document.getElementById('adminData');
-      adminData.innerHTML = '<div style="text-align: center; padding: 20px;">Resetting all bookings...<div class="loading" style="margin: 10px auto; display: block;"></div></div>';
-      
-      // Get all PS5 consoles that are currently booked
-      const psConsoles = [];
-      const bookings = getLocalBookings();
-      bookings.forEach(booking => {
-        if (booking.console.includes('PS5')) {
-          psConsoles.push(booking.console);
-        }
-      });
-      
-      // Clear all local bookings
-      clearAllBookings();
-      
-      // Send power OFF commands to all PS5 consoles
-      if (psConsoles.length > 0) {
-        showStatusMessage(`Powering off ${psConsoles.length} PS5 consoles...`, 'info');
-        
-        const powerOffPromises = psConsoles.map(consoleName => {
-          return sendPowerCommand(consoleName, 'off')
-            .catch(err => console.error(`Error turning off ${consoleName}:`, err));
-        });
-        
-        // Wait for all power commands to complete
-        await Promise.allSettled(powerOffPromises);
-      }
-      
-      // Reset server bookings
-      let serverResetSuccessful = true;
-      try {
-        const response = await fetch(`${API_BASE_URL}/api/reset`, { method: 'POST' });
-        if (!response.ok) {
-          console.error('Failed to reset server bookings');
-          serverResetSuccessful = false;
-        }
-      } catch (err) {
-        console.error('Error resetting server bookings:', err);
-        serverResetSuccessful = false;
-      }
-      
-      if (serverResetSuccessful) {
-        showStatusMessage('All device timers have been reset successfully!', 'success');
-      } else {
-        showStatusMessage('Local bookings reset successfully. Server bookings may not have been reset.', 'success');
-      }
-      
-      // Refresh device list after reset
-      setTimeout(fetchConsoles, 1000);
-    } catch (error) {
-      showStatusMessage(`Failed to reset some bookings: ${error.message}`, 'error');
-      adminData.innerHTML = `<div class="error" style="display: block;">Error: ${error.message}</div>`;
-    }
-  }
-</script>
+    // Update the displayed time
+    document.getElementById('current-date').textContent = "Current Date and Time (UTC - YYYY-MM-DD HH:MM:SS formatted): 2025-07-23 12:12:43";
+    document.getElementById('current-user').textContent = "Current User's Login: Azonix07";
+  </script>
 </body>
 </html>
