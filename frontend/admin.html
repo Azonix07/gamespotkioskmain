@@ -8,7 +8,6 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    
     /* Global Styling */
     * {
       margin: 0;
@@ -605,6 +604,23 @@
     .ps5-4-status {
       font-weight: bold;
     }
+    
+    /* Progress bar for 4-second press */
+    .progress-container {
+      width: 100%;
+      height: 4px;
+      background-color: #333;
+      margin-top: 5px;
+      border-radius: 2px;
+      overflow: hidden;
+      display: none;
+    }
+    
+    .progress-bar {
+      height: 100%;
+      background-color: #FF6F00;
+      width: 0%;
+    }
 
     /* Responsive Adjustments */
     @media (max-width: 768px) {
@@ -662,7 +678,7 @@
 <body>
   <!-- Header Bar -->
   <div class="header-bar">
-    <div id="current-date">Current Date and Time (UTC - YYYY-MM-DD HH:MM:SS formatted): 2025-07-28 17:35:24</div>
+    <div id="current-date">Current Date and Time (UTC - YYYY-MM-DD HH:MM:SS formatted): 2025-07-28 18:15:24</div>
     <div id="current-user">Current User's Login: Azonix07</div>
   </div>
 
@@ -729,7 +745,7 @@
     // Update current date and time in UTC format with exact format requested
     function updateDateTime() {
       // Display static date/time as requested
-      document.getElementById('current-date').textContent = "Current Date and Time (UTC - YYYY-MM-DD HH:MM:SS formatted): 2025-07-28 17:35:24";
+      document.getElementById('current-date').textContent = "Current Date and Time (UTC - YYYY-MM-DD HH:MM:SS formatted): 2025-07-28 18:15:24";
       document.getElementById('current-user').textContent = "Current User's Login: Azonix07";
     }
 
@@ -751,7 +767,8 @@
     const ESP32_CONFIG = {
       'PS5 #4': {
         ip: '192.168.1.212',
-        online: false
+        online: false,
+        requires4SecondPress: true
       }
     };
     
@@ -1040,8 +1057,29 @@
         // Turn off PS5 when timer expires
         if (consoleName.includes('PS5')) {
           try {
-            await sendPowerCommand(consoleName, 'off');
-            console.log(`Timer expired: Power OFF command sent to ${consoleName}`);
+            // Special handling for PS5 #4 with 4-second press
+            if (consoleName === 'PS5 #4') {
+              console.log(`Timer expired for ${consoleName} - using 4-second press method to turn off`);
+              
+              // Show status message with countdown
+              let secondsRemaining = 4;
+              showStatusMessage(`Timer expired: Turning off ${consoleName} in ${secondsRemaining}s...`, 'info');
+              
+              // Create a countdown before turning off
+              for (let i = 0; i < 4; i++) {
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                secondsRemaining--;
+                showStatusMessage(`Timer expired: Turning off ${consoleName} in ${secondsRemaining}s...`, 'info');
+              }
+              
+              // Now send the actual power command
+              await sendActualPowerCommand(consoleName, 'off');
+              showStatusMessage(`Timer expired: ${consoleName} has been turned off`, 'success');
+            } else {
+              // Regular power off for other PS5 consoles
+              await sendPowerCommand(consoleName, 'off');
+              console.log(`Timer expired: Power OFF command sent to ${consoleName}`);
+            }
           } catch (err) {
             console.error(`Error turning off ${consoleName} after timer expired:`, err);
           }
@@ -1106,9 +1144,38 @@
       localStorage.setItem('consoleBookings', JSON.stringify([]));
     }
     
-    // Send power command to ESP32 - IMPROVED FOR PS5 #4
+    // Send power command to ESP32 - UPDATED FOR 4-SECOND PRESS
     async function sendPowerCommand(consoleName, action) {
       try {
+        // Check if this is PS5 #4 and action is "off" - needs 4-second press
+        if (consoleName === 'PS5 #4' && action === 'off' && ESP32_CONFIG[consoleName]?.requires4SecondPress) {
+          showStatusMessage(`Preparing to turn off ${consoleName} (requires 4-second press)...`, 'info');
+          
+          // Create progress bar in status message
+          const statusElement = document.getElementById('statusMessage');
+          statusElement.innerHTML = `
+            <div>Sending OFF command to ${consoleName} - holding for 4 seconds...</div>
+            <div class="progress-container" style="display:block; margin-top:10px;">
+              <div id="press-progress" class="progress-bar"></div>
+            </div>
+          `;
+          
+          // Animate progress bar
+          const progressBar = document.getElementById('press-progress');
+          let progress = 0;
+          
+          // Update progress bar every 100ms for 4 seconds
+          for (let i = 0; i < 40; i++) {
+            progress += 2.5; // 2.5% per 100ms = 100% in 4 seconds
+            progressBar.style.width = `${progress}%`;
+            await new Promise(resolve => setTimeout(resolve, 100));
+          }
+          
+          // Now send the actual power command
+          return await sendActualPowerCommand(consoleName, action);
+        }
+        
+        // For all other cases, send command immediately
         showStatusMessage(`Sending ${action} command to ${consoleName}...`, 'info');
         
         const response = await fetch(`${API_BASE_URL}/power-control`, {
@@ -1139,6 +1206,39 @@
       } catch (error) {
         console.error(`Error sending power ${action} command to ${consoleName}:`, error);
         showStatusMessage(`Failed to send power ${action} command to ${consoleName}: ${error.message}`, 'error');
+        return false;
+      }
+    }
+    
+    // Helper function for the actual power command (without the countdown)
+    async function sendActualPowerCommand(consoleName, action) {
+      try {
+        const response = await fetch(`${API_BASE_URL}/power-control`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            console: consoleName,
+            action: action
+          })
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Unknown error');
+        }
+        
+        const result = await response.json();
+        if (action === 'off') {
+          showStatusMessage(`${consoleName} has been turned off successfully`, 'success');
+        } else {
+          showStatusMessage(`${result.message}`, 'success');
+        }
+        return true;
+      } catch (error) {
+        console.error(`Error sending direct power ${action} command to ${consoleName}:`, error);
+        showStatusMessage(`Failed to send power ${action} command: ${error.message}`, 'error');
         return false;
       }
     }
@@ -1194,7 +1294,7 @@
           html += `<td>
             ${controller.status === 'online' ? 
               `<button class="power-button power-on" onclick="sendPowerCommand('${controller.console}', 'on')">Power ON</button>
-               <button class="power-button power-off" onclick="sendPowerCommand('${controller.console}', 'off')">Power OFF</button>` : 
+               <button class="power-button power-off" onclick="sendPowerCommand('${controller.console}', 'off')">${isPS5_4 ? 'Hold 4s to OFF' : 'Power OFF'}</button>` : 
               '<button class="power-button" disabled>Unavailable</button>'}
           </td>`;
           html += `</tr>`;
@@ -1207,7 +1307,12 @@
         // Add special note for PS5 #4 if it's online
         if (ESP32_CONFIG['PS5 #4'] && ESP32_CONFIG['PS5 #4'].online) {
           html += `<div style="margin-top: 20px; padding: 10px; background: rgba(0, 128, 0, 0.2); border-radius: 8px; border: 1px solid #4CAF50;">
-            <strong>PS5 #4 ESP32 (${ESP32_CONFIG['PS5 #4'].ip})</strong> is connected and ready to receive power commands.
+            <strong>PS5 #4 ESP32 (${ESP32_CONFIG['PS5 #4'].ip})</strong> is connected and ready to receive power commands.<br>
+            <span style="color:#FF6F00; font-weight:bold;">Note: Turning OFF requires a 4-second press.</span>
+          </div>`;
+        } else if (ESP32_CONFIG['PS5 #4']) {
+          html += `<div style="margin-top: 20px; padding: 10px; background: rgba(255, 0, 0, 0.2); border-radius: 8px; border: 1px solid #F44336;">
+            <strong>PS5 #4 ESP32</strong> appears to be offline. Please check the connection and power status.
           </div>`;
         }
         
@@ -1273,9 +1378,9 @@
         // Turn OFF - Send power OFF command to ESP32 if it's a PS5
         if (consoleName.includes('PS5')) {
           try {
-            // Special handling for PS5 #4 - log extra details
+            // Special handling for PS5 #4 - log extra details and use 4-second press method
             if (consoleName === 'PS5 #4') {
-              console.log(`Sending OFF command to ${consoleName} at ${ESP32_CONFIG[consoleName]?.ip || 'unknown IP'}`);
+              console.log(`Sending OFF command to ${consoleName} at ${ESP32_CONFIG[consoleName]?.ip || 'unknown IP'} with 4-second press`);
             }
             
             const success = await sendPowerCommand(consoleName, 'off');
@@ -1413,8 +1518,9 @@
           const statusClass = ps5_4Status === 'online' ? 'success' : 'info';
           
           html += `<div class="status-message ${statusClass}" style="display: block; margin-top: 20px;">
-            PS5 #4 ESP32 Controller: ${ps5_4Status === 'online' ? 'ONLINE ✓' : 'OFFLINE'}
+            PS5 #4 ESP32 Controller: ${ps5_4Status === 'online' ? 'ONLINE ✓' : 'OFFLINE'} 
             at ${ESP32_CONFIG['PS5 #4'].ip}
+            ${ps5_4Status === 'online' ? ' <span style="color:#FF6F00; font-weight:bold;">(Requires 4-second press to turn OFF)</span>' : ''}
           </div>`;
         }
         
@@ -1427,7 +1533,7 @@
       }
     }
 
-    // Reset a single device - Enhanced for PS5 #4
+    // Reset a single device - Enhanced for PS5 #4 with 4-second press
     async function resetDevice(name, source) {
       if (!confirm(`Are you sure you want to reset the timer for ${name}?`)) {
         return;
@@ -1443,16 +1549,71 @@
       });
       
       try {
+        // Special handling for PS5 #4 - 4-second press required
+        if (name === 'PS5 #4') {
+          try {
+            // Show status message with countdown
+            showStatusMessage(`Resetting ${name} and turning off in 4 seconds...`, 'info');
+            
+            // Wait 4 seconds with visual indicator
+            const statusElement = document.getElementById('statusMessage');
+            statusElement.innerHTML = `
+              <div>Resetting ${name} and turning off - holding for 4 seconds...</div>
+              <div class="progress-container" style="display:block; margin-top:10px;">
+                <div id="reset-progress" class="progress-bar"></div>
+              </div>
+            `;
+            
+            // Animate progress bar
+            const progressBar = document.getElementById('reset-progress');
+            let progress = 0;
+            
+            // Update progress bar every 100ms for 4 seconds
+            for (let i = 0; i < 40; i++) {
+              progress += 2.5; // 2.5% per 100ms = 100% in 4 seconds
+              progressBar.style.width = `${progress}%`;
+              await new Promise(resolve => setTimeout(resolve, 100));
+            }
+            
+            // Handle local booking reset
+            if (source === 'local') {
+              clearLocalBooking(name);
+              
+              // Now send the power off command
+              await sendActualPowerCommand(name, 'off');
+              
+              showStatusMessage(`Timer for ${name} has been reset and device powered off!`, 'success');
+              fetchConsoles(); // Refresh the device list
+              return;
+            }
+            
+            // Handle server booking reset
+            const response = await fetch(`${API_BASE_URL}/reset-single`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ console: name })
+            });
+            
+            if (response.ok) {
+              showStatusMessage(`Timer for ${name} has been reset successfully!`, 'success');
+              fetchConsoles(); // Refresh the device list
+            } else {
+              throw new Error('Failed to reset PS5 #4');
+            }
+          } catch (err) {
+            console.error(`Error resetting PS5 #4:`, err);
+            showStatusMessage(`Error resetting PS5 #4: ${err.message}`, 'error');
+          }
+          return;
+        }
+        
+        // Normal reset for other devices
         // Power off PS5 if applicable
         let powerOffAttempted = false;
         if (name.includes('PS5')) {
           try {
             await sendPowerCommand(name, 'off');
             powerOffAttempted = true;
-            
-            if (name === 'PS5 #4') {
-              console.log('PS5 #4 power off attempt completed during reset');
-            }
           } catch (powerErr) {
             console.error(`Error sending power OFF command to ${name}:`, powerErr);
           }
@@ -1486,9 +1647,7 @@
           console.warn("reset-single endpoint failed, trying general reset as fallback");
           const fallbackResponse = await fetch(`${API_BASE_URL}/reset`, {
             method: 'POST'
-          });
-          
-          if (fallbackResponse.ok) {
+          });          if (fallbackResponse.ok) {
             showStatusMessage(`All timers have been reset as individual reset wasn't available.`, 'success');
             fetchConsoles(); // Refresh the device list
           } else {
@@ -1503,7 +1662,7 @@
         buttons.forEach(btn => {
           if (btn.parentNode.previousElementSibling.previousElementSibling.previousElementSibling.previousElementSibling.textContent.includes(name)) {
             btn.disabled = false;
-            btn.textContent = 'Reset Timer';
+            btn.textContent = 'Reset';
           }
         });
       }
@@ -1628,7 +1787,7 @@
         html += '<div class="payment-tab" onclick="switchTab(\'local\')">Local</div>';
         html += '</div>';
         
-               // All payments tab content
+        // All payments tab content
         html += '<div id="all" class="tab-content active">';
         html += createPaymentTable(allPayments, true);
         html += '</div>';
@@ -1663,6 +1822,21 @@
       } catch (error) {
         adminData.innerHTML = `<div class="error" style="display: block;">Error: ${error.message}</div>`;
       }
+    }
+    
+    // Switch between payment tabs
+    function switchTab(tabId) {
+      // Hide all tabs and remove active class
+      document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.classList.remove('active');
+      });
+      document.querySelectorAll('.payment-tab').forEach(tab => {
+        tab.classList.remove('active');
+      });
+      
+      // Show selected tab and add active class
+      document.getElementById(tabId).classList.add('active');
+      document.querySelector(`.payment-tab[onclick="switchTab('${tabId}')"]`).classList.add('active');
     }
     
     // Create payment table HTML with user photos and amount - IMPROVED VERSION
@@ -1745,7 +1919,7 @@
       return tableHtml;
     }
 
-    // Reset all bookings - Enhanced to handle local bookings and power off PS5s
+    // Reset all bookings - Enhanced with 4-second press for PS5 #4
     async function resetAllBookings() {
       if (!confirm('Are you sure you want to reset ALL device timers? This cannot be undone.')) {
         return;
@@ -1771,18 +1945,40 @@
         if (psConsoles.length > 0) {
           showStatusMessage(`Powering off ${psConsoles.length} PS5 consoles...`, 'info');
           
-          // Special handling for PS5 #4 - log extra details
-          if (psConsoles.includes('PS5 #4')) {
-            console.log(`Sending OFF command to PS5 #4 at ${ESP32_CONFIG['PS5 #4']?.ip || 'unknown IP'}`);
+          // Special handling for PS5 #4 - requires 4-second press
+          for (const consoleName of psConsoles) {
+            if (consoleName === 'PS5 #4') {
+              // Create a visual countdown for PS5 #4
+              showStatusMessage(`Turning off PS5 #4 with 4-second press...`, 'info');
+              
+              // Wait 4 seconds with progress indicator
+              const statusElement = document.getElementById('statusMessage');
+              statusElement.innerHTML = `
+                <div>Turning off PS5 #4 - holding for 4 seconds...</div>
+                <div class="progress-container" style="display:block; margin-top:10px;">
+                  <div id="reset-all-progress" class="progress-bar"></div>
+                </div>
+              `;
+              
+              // Animate progress bar
+              const progressBar = document.getElementById('reset-all-progress');
+              let progress = 0;
+              
+              // Update progress bar every 100ms for 4 seconds
+              for (let i = 0; i < 40; i++) {
+                progress += 2.5; // 2.5% per 100ms = 100% in 4 seconds
+                progressBar.style.width = `${progress}%`;
+                await new Promise(resolve => setTimeout(resolve, 100));
+              }
+              
+              // Send the actual power command
+              await sendActualPowerCommand(consoleName, 'off');
+            } else {
+              // Regular power off for other PS5 consoles
+              await sendPowerCommand(consoleName, 'off')
+                .catch(err => console.error(`Error turning off ${consoleName}:`, err));
+            }
           }
-          
-          const powerOffPromises = psConsoles.map(consoleName => {
-            return sendPowerCommand(consoleName, 'off')
-              .catch(err => console.error(`Error turning off ${consoleName}:`, err));
-          });
-          
-          // Wait for all power commands to complete
-          await Promise.allSettled(powerOffPromises);
         }
         
         // Reset server bookings
@@ -1882,7 +2078,27 @@
           
           for (const consoleName of expiredPS5s) {
             try {
-              await sendPowerCommand(consoleName, 'off');
+              if (consoleName === 'PS5 #4') {
+                // Use 4-second method for PS5 #4
+                console.log(`Using 4-second method to turn off expired ${consoleName}`);
+                
+                // Show status message with countdown
+                let secondsRemaining = 4;
+                showStatusMessage(`Expired session: Turning off ${consoleName} in ${secondsRemaining}s...`, 'info');
+                
+                // Create a countdown before turning off
+                for (let i = 0; i < 4; i++) {
+                  await new Promise(resolve => setTimeout(resolve, 1000));
+                  secondsRemaining--;
+                  showStatusMessage(`Expired session: Turning off ${consoleName} in ${secondsRemaining}s...`, 'info');
+                }
+                
+                // Now send the actual power command
+                await sendActualPowerCommand(consoleName, 'off');
+              } else {
+                // Regular power off for other PS5 consoles
+                await sendPowerCommand(consoleName, 'off');
+              }
               console.log(`Power OFF command sent to expired console ${consoleName}`);
             } catch (err) {
               console.error(`Error turning off expired console ${consoleName}:`, err);
@@ -1892,9 +2108,30 @@
       }
     })();
 
+    // Log power state changes for diagnostics
+    function logPowerStateChange(consoleName, state, source) {
+      const logEntry = {
+        time: new Date().toISOString(),
+        console: consoleName,
+        state: state ? 'ON' : 'OFF',
+        source: source || 'unknown',
+        user: 'Azonix07'
+      };
+      
+      // Store in localStorage
+      let powerLog = JSON.parse(localStorage.getItem('powerStateLog') || '[]');
+      powerLog.unshift(logEntry); // Add to beginning
+      if (powerLog.length > 100) powerLog = powerLog.slice(0, 100); // Keep only last 100
+      localStorage.setItem('powerStateLog', JSON.stringify(powerLog));
+      
+      // Log to console
+      console.log(`Power state change: ${consoleName} turned ${state ? 'ON' : 'OFF'} by ${source || 'unknown'}`);
+    }
+
     // Update the displayed time
-    document.getElementById('current-date').textContent = "Current Date and Time (UTC - YYYY-MM-DD HH:MM:SS formatted): 2025-07-28 17:41:03";
+    document.getElementById('current-date').textContent = "Current Date and Time (UTC - YYYY-MM-DD HH:MM:SS formatted): 2025-07-28 18:20:09";
     document.getElementById('current-user').textContent = "Current User's Login: Azonix07";
   </script>
 </body>
 </html>
+          
