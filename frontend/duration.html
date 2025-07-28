@@ -89,8 +89,9 @@
       justify-content: center;
     }
 
+    /* Fixed animation that doesn't push content off-screen */
     .selections-container.shifted {
-      transform: translateX(-25%);
+      transform: translateX(-18%); /* Reduced shift to keep buttons visible */
     }
 
     /* Duration Container */
@@ -200,7 +201,7 @@
       margin-top: 15px;
     }
 
-    /* Controller buttons */
+    /* Controller buttons - FIXED HIGHLIGHT COLOR */
     .controller-option {
       background: rgba(20, 20, 35, 0.7);
       border: 1px solid rgba(255, 255, 255, 0.3);
@@ -216,8 +217,10 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      color: white;
     }
 
+    /* Fixed selected state for controller options */
     .controller-option.selected {
       background: rgba(255, 255, 255, 0.9);
       color: rgb(255, 111, 0);
@@ -225,6 +228,7 @@
       box-shadow: 0 2px 8px rgba(255, 255, 255, 0.4);
     }
 
+    /* Fixed active state for controller options */
     .controller-option:active {
       background: rgba(255, 255, 255, 0.7);
       color: rgb(255, 111, 0);
@@ -241,8 +245,8 @@
       right: -100%;
       top: 50%;
       transform: translateY(-50%);
-      width: 40%;
-      max-width: 400px;
+      width: 38%;
+      max-width: 380px;
       opacity: 0;
       transition: right 0.5s ease, opacity 0.5s ease;
       display: flex;
@@ -301,7 +305,7 @@
       width: 100%;
     }
 
-    /* Back Button - In summary and fixed position */
+    /* Back Button - In fixed position */
     .back-button {
       position: fixed;
       bottom: 30px;
@@ -382,7 +386,7 @@
     /* Galaxy A7 Tablet Specific Styles */
     @media (max-width: 1024px) {
       .selections-container.shifted {
-        transform: translateX(0); /* No shift on tablet */
+        transform: translateX(-10%); /* Even smaller shift on tablet */
       }
       
       .summary-container {
@@ -494,6 +498,10 @@
       
       .logo-container img {
         height: 45px;
+      }
+      
+      .selections-container.shifted {
+        transform: translateX(-5%); /* Even smaller shift on phones */
       }
     }
   </style>
@@ -696,7 +704,7 @@
       setTimeout(() => {
         document.getElementById('summaryContainer').classList.add('visible');
         
-        // Only shift on non-mobile devices
+        // Only shift on non-mobile devices, with smaller shift to keep buttons visible
         if (!isMobile) {
           document.getElementById('selectionsContainer').classList.add('shifted');
         }
