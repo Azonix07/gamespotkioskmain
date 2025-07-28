@@ -68,6 +68,7 @@
       display: flex;
       flex-direction: column;
       position: relative;
+      overflow: hidden;
     }
 
     /* Logo Styling */
@@ -118,8 +119,9 @@
       justify-content: center;
     }
 
+    /* Updated shifted class with responsive behavior */
     .selections-container.shifted {
-      transform: translateX(-25%);
+      transform: translateX(-20%);
     }
 
     /* Duration Container */
@@ -130,59 +132,60 @@
       justify-content: center;
       align-items: center;
       padding: 20px;
+      min-height: 350px;
     }
 
-    /* Duration Options Grid - Improved alignment */
+    /* Duration Options Grid */
     .duration-options {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      gap: 25px; /* Increased gap */
+      gap: 25px;
       margin: 0 auto;
-      max-width: 800px; /* Increased max width */
+      max-width: 800px;
       width: 100%;
     }
 
-    /* Duration Box Styling - LARGER */
+    /* Duration Box Styling */
     .duration-box {
       background: linear-gradient(145deg, #1e1e2f, #252540);
       border: 2px solid rgba(255, 111, 0, 0.6);
-      border-radius: 15px; /* More rounded corners */
-      padding: 30px 20px; /* Increased padding */
+      border-radius: 15px;
+      padding: 30px 20px;
       cursor: pointer;
       text-align: center;
       transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
       position: relative;
-      min-height: 160px; /* Increased height */
+      min-height: 160px;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3); /* Stronger shadow */
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
     }
 
     /* Selected duration box */
     .duration-box.selected {
       background: linear-gradient(145deg, rgb(255, 111, 0), rgb(220, 90, 0));
       border-color: white;
-      transform: scale(1.1);
+      transform: scale(1.05); /* Reduced scale for better fit */
       box-shadow: 0 10px 25px rgba(255, 111, 0, 0.4);
       z-index: 10;
     }
 
     /* Non-selected boxes when one is selected */
     .duration-options.expanded .duration-box:not(.selected) {
-      transform: scale(0.8);
+      transform: scale(0.9); /* Reduced scale down for better fit */
       opacity: 0.5;
     }
 
     .duration-time {
-      font-size: 2rem; /* Larger text */
+      font-size: 1.8rem; /* Adjusted size */
       font-weight: 700;
       color: white;
     }
 
     .duration-price {
-      font-size: 2rem; /* Larger text */
+      font-size: 1.8rem; /* Adjusted size */
       font-weight: 700;
       color: rgb(255, 111, 0);
       transition: color 0.3s ease;
@@ -194,7 +197,7 @@
     }
 
     .price-details {
-      font-size: 1rem; /* Larger text */
+      font-size: 1rem;
       opacity: 0.8;
       margin-top: 8px;
     }
@@ -205,7 +208,7 @@
       right: 10px;
       background: #4CAF50;
       color: white;
-      font-size: 0.8rem; /* Larger text */
+      font-size: 0.8rem;
       font-weight: 600;
       padding: 4px 10px;
       border-radius: 12px;
@@ -223,25 +226,25 @@
     .controller-options {
       display: flex;
       justify-content: center;
-      gap: 20px; /* Increased gap */
-      padding-top: 20px; /* Increased padding */
+      gap: 15px; /* Reduced gap */
+      padding-top: 15px; /* Reduced padding */
       border-top: 1px solid rgba(255, 255, 255, 0.2);
       margin-top: 15px;
     }
 
-    /* Controller buttons - LARGER */
+    /* Controller buttons */
     .controller-option {
       background: rgba(20, 20, 35, 0.7);
       border: 1px solid rgba(255, 255, 255, 0.3);
       border-radius: 10px;
-      padding: 10px 0;
-      width: 65px; /* Wider buttons */
-      height: 50px; /* Taller buttons */
+      padding: 8px 0;
+      width: 55px; /* Smaller width */
+      height: 45px; /* Smaller height */
       cursor: pointer;
       text-align: center;
       transition: all 0.2s ease;
       font-weight: 600;
-      font-size: 1.3rem; /* Larger text */
+      font-size: 1.2rem; /* Smaller text */
       display: flex;
       align-items: center;
       justify-content: center;
@@ -259,7 +262,7 @@
       max-height: 100px;
     }
 
-    /* Summary Container - Hidden initially, appears on right after player selection */
+    /* Summary Container - Redesigned for better responsiveness */
     .summary-container {
       position: absolute;
       right: -100%;
@@ -268,7 +271,7 @@
       width: 40%;
       max-width: 400px;
       opacity: 0;
-      transition: right 0.5s ease, opacity 0.5s ease;
+      transition: right 0.5s ease, opacity 0.5s ease, top 0.5s ease, transform 0.5s ease;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -406,11 +409,159 @@
       background: rgba(255, 111, 0, 0.3);
       transform: translateY(-2px);
     }
+
+    /* Responsive Media Queries */
+    
+    /* Galaxy A7 tablet in landscape mode (1280x800) */
+    @media (min-width: 1024px) and (max-height: 900px) {
+      .duration-time {
+        font-size: 1.6rem;
+      }
+      .duration-price {
+        font-size: 1.6rem;
+      }
+      .continue-button, .summary-back {
+        padding: 10px 20px;
+        font-size: 1.1rem;
+      }
+      .duration-box {
+        padding: 25px 15px;
+        min-height: 140px;
+      }
+    }
+    
+    /* Tablets and smaller screens (including Galaxy A7 in portrait 800x1280) */
+    @media (max-width: 1024px) {
+      .selections-container.shifted {
+        transform: translateX(0); /* No shift on smaller screens */
+      }
+      
+      .summary-container {
+        position: fixed;
+        left: 0;
+        right: 0;
+        top: auto;
+        bottom: -100%;
+        transform: translateY(0);
+        width: 100%;
+        max-width: 100%;
+        padding: 20px;
+        background: rgba(20, 20, 35, 0.95);
+        border-top: 2px solid rgb(255, 111, 0);
+        box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.4);
+      }
+      
+      .summary-container.visible {
+        bottom: 0;
+        right: 0;
+      }
+      
+      .price-summary {
+        max-width: 500px;
+        margin: 0 auto 20px;
+      }
+      
+      .summary-buttons {
+        max-width: 500px;
+        margin: 0 auto;
+      }
+      
+      .back-button.faded {
+        opacity: 0;
+        pointer-events: none;
+      }
+      
+      .duration-options {
+        gap: 20px;
+      }
+    }
+    
+    /* Smaller tablets and large phones */
+    @media (max-width: 768px) {
+      h1 {
+        font-size: 1.8rem;
+      }
+      
+      .logo-container img {
+        height: 50px;
+      }
+      
+      .selected-console {
+        font-size: 0.9rem;
+      }
+      
+      .duration-time {
+        font-size: 1.5rem;
+      }
+      
+      .duration-price {
+        font-size: 1.5rem;
+      }
+      
+      .controller-option {
+        width: 50px;
+        height: 40px;
+        font-size: 1.1rem;
+      }
+      
+      .duration-box {
+        padding: 20px 15px;
+        min-height: 130px;
+      }
+      
+      .back-button {
+        bottom: 20px;
+        left: 20px;
+        padding: 10px 20px;
+        font-size: 1rem;
+      }
+      
+      .continue-button, .summary-back {
+        padding: 10px 20px;
+        font-size: 1rem;
+      }
+    }
+    
+    /* Phones */
+    @media (max-width: 480px) {
+      .duration-options {
+        grid-template-columns: 1fr; /* Single column */
+        gap: 15px;
+      }
+      
+      .duration-box {
+        padding: 20px 15px;
+        min-height: 120px;
+      }
+      
+      .controller-options {
+        gap: 10px;
+      }
+      
+      .controller-option {
+        width: 45px;
+        height: 35px;
+        font-size: 1rem;
+      }
+      
+      .summary-row {
+        font-size: 1rem;
+      }
+      
+      .summary-row.total {
+        font-size: 1.2rem;
+      }
+    }
+
+    /* Fix for iOS Safari */
+    @supports (-webkit-touch-callout: none) {
+      body, .main-container {
+        height: -webkit-fill-available;
+      }
+    }
   </style>
 </head>
 <body>
- 
-  
   <div class="main-container">
     <div>
       <div class="logo-container">
@@ -459,7 +610,7 @@
     <!-- Initially visible back button that fades out -->
     <button class="back-button" id="fixedBackButton" onclick="goBack()">Back</button>
   </div>
-
+ <script src="config.js"></script>
   <script>
     const selectedConsole = localStorage.getItem('selectedConsole');
 
@@ -491,6 +642,9 @@
     // Global state
     let selectedDuration = null;
     let selectedControllers = null;
+
+    // Detect if we're on a mobile or tablet device
+    const isMobileOrTablet = window.innerWidth <= 1024;
 
     // Populate duration options
     function loadDurations() {
@@ -614,7 +768,12 @@
       // Show summary container after a brief delay
       setTimeout(() => {
         document.getElementById('summaryContainer').classList.add('visible');
-        document.getElementById('selectionsContainer').classList.add('shifted');
+        
+        // Only shift the container on larger screens
+        if (!isMobileOrTablet) {
+          document.getElementById('selectionsContainer').classList.add('shifted');
+        }
+        
         document.getElementById('fixedBackButton').classList.add('faded');
       }, 200);
     }
@@ -687,6 +846,26 @@
 
     // Initialize the page
     loadDurations();
+    
+    // Update mobile detection on resize
+    window.addEventListener('resize', function() {
+      const wasSmall = isMobileOrTablet;
+      const isNowSmall = window.innerWidth <= 1024;
+      
+      // Only update if the state changed
+      if (wasSmall !== isNowSmall) {
+        isMobileOrTablet = isNowSmall;
+        
+        // If selection was made, update layout
+        if (selectedDuration) {
+          if (isMobileOrTablet) {
+            document.getElementById('selectionsContainer').classList.remove('shifted');
+          } else {
+            document.getElementById('selectionsContainer').classList.add('shifted');
+          }
+        }
+      }
+    });
   </script>
 </body>
 </html>
