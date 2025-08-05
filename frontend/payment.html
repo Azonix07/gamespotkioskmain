@@ -7,6 +7,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Firebase Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
   <style>
     /* Global Styling */
     * {
@@ -522,6 +525,7 @@
       display: flex;
       justify-content: center;
       gap: 15px;
+      align-items: center;
     }
 
     .qr-close-btn {
@@ -541,21 +545,10 @@
       transform: translateY(-2px);
     }
 
-    .qr-confirm-btn {
-      padding: 12px 25px;
-      font-size: 1rem;
-      background: rgb(255, 111, 0);
+    .waiting-status {
       color: white;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: all 0.3s;
-      font-weight: 600;
-    }
-
-    .qr-confirm-btn:hover {
-      background: #ff6b6b;
-      transform: translateY(-2px);
+      font-weight: 500;
+      font-style: italic;
     }
 
     /* Test mode indicator */
@@ -592,6 +585,64 @@
     button:focus, button:active, input:focus, input:active, a:focus, a:active {
       outline: none;
       -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Waiting for confirmation overlay */
+    .waiting-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.8);
+      z-index: 2000;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      animation: fadeIn 0.3s;
+    }
+    
+    .waiting-container {
+      background: rgba(30, 30, 47, 0.9);
+      border-radius: 15px;
+      padding: 30px;
+      max-width: 400px;
+      width: 90%;
+      text-align: center;
+      border: 2px solid rgb(255, 111, 0);
+    }
+    
+    .waiting-title {
+      color: rgb(255, 111, 0);
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: 15px;
+    }
+    
+    .waiting-message {
+      color: white;
+      margin-bottom: 20px;
+    }
+    
+    .waiting-spinner {
+      width: 50px;
+      height: 50px;
+      border: 4px solid rgba(255, 111, 0, 0.3);
+      border-top-color: rgb(255, 111, 0);
+      border-radius: 50%;
+      margin: 0 auto 20px auto;
+      animation: spin 1s linear infinite;
+    }
+    
+    .waiting-cancel {
+      padding: 10px 20px;
+      background: #f44336;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-weight: 600;
+      cursor: pointer;
     }
 
     /* Responsive Adjustments */
@@ -645,7 +696,7 @@
     .preloaded-image {
       display: none;
     }
-</style>
+  </style>
 </head>
 <body>
   <!-- Video Background -->
@@ -758,14 +809,27 @@
           1. Open any UPI app (GPay, PhonePe, Paytm, etc.)<br>
           2. Scan this QR code or enter UPI ID manually<br>
           3. Enter the amount shown above<br>
-          4. Complete payment and click "Confirm Payment"
+          4. Complete payment in your UPI app and wait
         </div>
       </div>
       
       <div class="qr-footer">
         <button id="qrCloseBtn" class="qr-close-btn">Cancel</button>
-        <button id="qrConfirmBtn" class="qr-confirm-btn">Confirm Payment</button>
+        <div id="qrWaitingText" style="display: none;">
+          <span class="waiting-status">Waiting for admin confirmation</span>
+          <div class="loading-spinner" style="display: inline-block; width: 16px; height: 16px; margin-left: 8px; vertical-align: middle;"></div>
+        </div>
       </div>
+    </div>
+  </div>
+  
+  <!-- Waiting for confirmation overlay -->
+  <div id="waitingOverlay" class="waiting-overlay">
+    <div class="waiting-container">
+      <div class="waiting-spinner"></div>
+      <div class="waiting-title">Payment Pending</div>
+      <div class="waiting-message">Waiting for payment confirmation from admin...</div>
+      <button id="waitingCancelBtn" class="waiting-cancel">Cancel</button>
     </div>
   </div>
   
@@ -775,10 +839,28 @@
   </div>
 
   <script>
+    // Firebase Configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyDUIUj6uvUfWVxyHfgLWzahJAelrFqpIEc",
+      authDomain: "gamespotkiosk.firebaseapp.com",
+      databaseURL: "https://gamespotkiosk-default-rtdb.firebaseio.com",
+      projectId: "gamespotkiosk",
+      storageBucket: "gamespotkiosk.appspot.com",
+      messagingSenderId: "537976874541",
+      appId: "1:537976874541:web:9e847488e9fc6b78913aa4",
+      measurementId: "G-SGD83SS6D1"
+    };
+    
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+
     // Global variables
     let stream = null;
     let selectedPaymentMethod = null;
     const upiId = "gamespotkdlr@okhdfcbank";
+    let currentPaymentId = null;
+    let paymentListeners = {};
     
     // DOM elements
     const cameraFeed = document.getElementById('cameraFeed');
@@ -797,7 +879,11 @@
     const qrAmountDisplay = document.getElementById('qrAmountDisplay');
     const qrUpiId = document.getElementById('qrUpiId');
     const qrCloseBtn = document.getElementById('qrCloseBtn');
-    const qrConfirmBtn = document.getElementById('qrConfirmBtn');
+    const qrWaitingText = document.getElementById('qrWaitingText');
+    
+    // Waiting overlay elements
+    const waitingOverlay = document.getElementById('waitingOverlay');
+    const waitingCancelBtn = document.getElementById('waitingCancelBtn');
     
     // Preloaded QR element
     const preloadedQR = document.getElementById('preloadedQR');
@@ -840,8 +926,7 @@
       qrUpiId.textContent = upiId;
       
       // Preload QR code
-      const amount = totalPrice;
-      preloadQRCode(amount);
+      preloadQRCode(totalPrice);
     }
     
     // Preload QR code
@@ -963,6 +1048,130 @@
       }
     }
 
+    // Send payment alert to remote admin devices
+    function sendPaymentAlert(method, amount) {
+      try {
+        const consoleName = document.getElementById('selectedConsole').textContent;
+        const durationText = document.getElementById('selectedDuration').textContent;
+        const players = document.getElementById('selectedPlayers').textContent.split(' ')[0];
+        
+        // Extract minutes from duration text
+        let minutes;
+        if (durationText.includes('min')) {
+          minutes = parseInt(durationText.match(/\d+/)[0]);
+        } else if (durationText.includes('hour')) {
+          if (durationText.includes('1.5')) {
+            minutes = 90;
+          } else {
+            minutes = parseInt(durationText.match(/\d+/)[0]) * 60;
+          }
+        }
+        
+        // Create a pending payment object
+        const paymentId = `payment-${Date.now()}`;
+        const paymentData = {
+          id: paymentId,
+          console: consoleName,
+          minutes: minutes,
+          method: method,
+          players: parseInt(players),
+          amount: parseInt(amount),
+          createdAt: new Date().toISOString(),
+          status: 'pending'
+        };
+        
+        // Send to Firebase
+        database.ref(`pendingPayments/${paymentId}`).set(paymentData)
+          .then(() => {
+            console.log('Payment alert sent successfully');
+          })
+          .catch(error => {
+            console.error('Error sending payment alert:', error);
+            throw error;
+          });
+        
+        return paymentId;
+      } catch (error) {
+        console.error("Error creating payment alert:", error);
+        return null;
+      }
+    }
+
+    // Check for payment confirmation
+    function startPaymentConfirmationCheck(paymentId) {
+      // Show waiting text in QR modal
+      qrWaitingText.style.display = 'block';
+      
+      // Store current payment ID
+      currentPaymentId = paymentId;
+      
+      // Listen for confirmation
+      const confirmedRef = database.ref(`confirmedPayments/${paymentId}`);
+      const canceledRef = database.ref(`canceledPayments/${paymentId}`);
+      
+      // Confirmation listener
+      paymentListeners.confirm = confirmedRef.on('value', snapshot => {
+        if (snapshot.exists()) {
+          // Payment confirmed
+          removePaymentListeners(paymentId);
+          
+          handleSuccessfulPayment(null, selectedPaymentMethod, document.getElementById('totalAmount').textContent.replace('₹', ''));
+        }
+      });
+      
+      // Cancellation listener
+      paymentListeners.cancel = canceledRef.on('value', snapshot => {
+        if (snapshot.exists()) {
+          // Payment canceled
+          removePaymentListeners(paymentId);
+          qrModal.style.display = 'none';
+          
+          showStatusMessage('Payment was canceled by admin', 'error');
+          payBtn.disabled = false;
+          payBtn.innerHTML = 'Pay Now';
+          
+          currentPaymentId = null;
+        }
+      });
+    }
+    
+    // Cancel the current payment
+    function cancelCurrentPayment() {
+      if (currentPaymentId) {
+        // Remove the pending payment
+        database.ref(`pendingPayments/${currentPaymentId}`).remove()
+          .then(() => {
+            console.log('Payment request canceled');
+            removePaymentListeners(currentPaymentId);
+            qrModal.style.display = 'none';
+            
+            showStatusMessage('Payment request canceled', 'info');
+            payBtn.disabled = false;
+            payBtn.innerHTML = 'Pay Now';
+            
+            currentPaymentId = null;
+          })
+          .catch(error => {
+            console.error('Error canceling payment:', error);
+          });
+      } else {
+        qrModal.style.display = 'none';
+      }
+    }
+    
+    // Remove payment listeners
+    function removePaymentListeners(paymentId) {
+      if (paymentListeners.confirm) {
+        database.ref(`confirmedPayments/${paymentId}`).off('value', paymentListeners.confirm);
+      }
+      
+      if (paymentListeners.cancel) {
+        database.ref(`canceledPayments/${paymentId}`).off('value', paymentListeners.cancel);
+      }
+      
+      paymentListeners = {};
+    }
+
     // Add click event listeners to payment methods
     document.querySelectorAll('.payment-method').forEach(method => {
       method.onclick = function() {
@@ -997,44 +1206,44 @@
       
       // Show modal
       qrModal.style.display = 'flex';
+      
+      // Capture photo for verification
+      const photoDataUrl = capturePhoto();
+      if (!photoDataUrl) {
+        showStatusMessage('Failed to capture verification photo. Please try again.', 'error');
+        return;
+      }
+      
+      // Send payment alert to remote devices
+      const paymentId = sendPaymentAlert('upi', amount);
+      
+      if (paymentId) {
+        // Switch to waiting mode
+        qrWaitingText.style.display = 'block';
+        
+        // Start waiting for confirmation
+        startPaymentConfirmationCheck(paymentId);
+      } else {
+        showStatusMessage('Could not connect to payment server. Please try again.', 'error');
+      }
     }
     
-    // Close QR modal
+    // Handle UPI payment cancellation
     qrCloseBtn.addEventListener('click', function() {
+      // Hide modal
       qrModal.style.display = 'none';
-    });
-    
-    // Handle UPI payment confirmation
-    qrConfirmBtn.addEventListener('click', async function() {
-      try {
-        const amount = qrAmountDisplay.textContent;
-        
-        // Show processing state
-        qrConfirmBtn.disabled = true;
-        qrConfirmBtn.innerHTML = 'Processing <div class="loading-spinner"></div>';
-        
-        // Capture photo for verification
-        const photoDataUrl = capturePhoto();
-        if (!photoDataUrl) {
-          showStatusMessage('Failed to capture verification photo. Please try again.', 'error');
-          qrConfirmBtn.disabled = false;
-          qrConfirmBtn.textContent = 'Confirm Payment';
-          return;
-        }
-        
-        // Wait a bit to simulate verification
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        
-        // Process the payment
-        handleSuccessfulPayment(null, 'upi', amount);
-        
-        // Hide modal
-        qrModal.style.display = 'none';
-      } catch (err) {
-        console.error('UPI payment error:', err);
-        showStatusMessage(`Payment error: ${err.message}. Please try again.`, 'error');
-        qrConfirmBtn.disabled = false;
-        qrConfirmBtn.textContent = 'Confirm Payment';
+      
+      // If there's an active payment request, cancel it
+      if (currentPaymentId) {
+        database.ref(`pendingPayments/${currentPaymentId}`).remove()
+          .then(() => {
+            console.log('Payment request canceled');
+            removePaymentListeners(currentPaymentId);
+            currentPaymentId = null;
+          })
+          .catch(error => {
+            console.error('Error canceling payment:', error);
+          });
       }
     });
 
@@ -1095,7 +1304,7 @@
           // Wait a bit to simulate processing
           await new Promise(resolve => setTimeout(resolve, 1500));
           
-          // Handle the successful payment
+          // Handle the successful payment - for cash, we don't need remote confirmation
           handleSuccessfulPayment(null, 'cash', amount);
           
         } catch (err) {
@@ -1144,6 +1353,9 @@
     // Handle successful payment completion
     async function handleSuccessfulPayment(response, method, amount) {
       try {
+        // Hide QR modal if it's open
+        qrModal.style.display = 'none';
+        
         // Get payment details
         const consoleName = document.getElementById('selectedConsole').textContent;
         const durationText = document.getElementById('selectedDuration').textContent;
@@ -1269,6 +1481,12 @@
           stream.getTracks().forEach(track => track.stop());
         }
         
+        // Clean up Firebase listeners
+        if (currentPaymentId) {
+          removePaymentListeners(currentPaymentId);
+          currentPaymentId = null;
+        }
+        
         // Redirect after a delay
         setTimeout(() => {
           window.location.href = 'index.html';
@@ -1277,6 +1495,12 @@
       } catch (err) {
         console.error('Payment processing error:', err);
         showStatusMessage(`Payment processing error: ${err.message}. Please contact support.`, 'error');
+        
+        // Clean up Firebase listeners
+        if (currentPaymentId) {
+          removePaymentListeners(currentPaymentId);
+          currentPaymentId = null;
+        }
       }
     }
 
@@ -1285,6 +1509,12 @@
       // Stop camera stream if it's active
       if (stream) {
         stream.getTracks().forEach(track => track.stop());
+      }
+      
+      // Clean up Firebase listeners
+      if (currentPaymentId) {
+        removePaymentListeners(currentPaymentId);
+        currentPaymentId = null;
       }
       
       // Go back to duration selection
@@ -1302,16 +1532,40 @@
         statusMessage.style.display = 'none';
       }, 5000);
     }
+    
+    // Listen for admin commands (like redirect)
+    function listenForAdminCommands() {
+      const commandsRef = database.ref('commands');
+      commandsRef.limitToLast(1).on('child_added', snapshot => {
+        const command = snapshot.val();
+        
+        if (command && Date.now() - command.timestamp < 60000) { // Only process commands from the last minute
+          console.log('Received admin command:', command);
+          
+          if (command.type === 'redirect' && command.page) {
+            // Redirect to the specified page
+            window.location.href = command.page;
+          }
+        }
+      });
+    }
 
     // Initialize page
     function init() {
-      // Store current date and time in a variable
-      const currentDateTime = "Current Date and Time (UTC - YYYY-MM-DD HH:MM:SS formatted): 2025-08-05 08:17:05";
-      const currentUser = "Current User's Login: Azonix07";
+      // Update instruction to not mention "Confirm Payment"
+      const qrInstructionsElem = document.querySelector('.qr-instructions');
+      if (qrInstructionsElem) {
+        qrInstructionsElem.innerHTML = `
+          1. Open any UPI app (GPay, PhonePe, Paytm, etc.)<br>
+          2. Scan this QR code or enter UPI ID manually<br>
+          3. Enter the amount shown above<br>
+          4. Complete payment in your UPI app and wait
+        `;
+      }
       
       initPaymentDetails();
-      // Automatically initialize the camera
       initCamera();
+      listenForAdminCommands();
     }
 
     // Start initialization when page loads
