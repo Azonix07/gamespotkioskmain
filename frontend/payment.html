@@ -696,6 +696,30 @@
     .preloaded-image {
       display: none;
     }
+    
+    /* Debug panel */
+    .debug-panel {
+      position: fixed;
+      bottom: 10px;
+      right: 10px;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 5px 10px;
+      border-radius: 5px;
+      z-index: 9999;
+      font-size: 10px;
+      display: flex;
+      gap: 5px;
+    }
+    
+    .debug-btn {
+      padding: 5px;
+      background: #333;
+      color: white;
+      border: none;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 10px;
+    }
   </style>
 </head>
 <body>
@@ -837,6 +861,13 @@
   <div class="preloaded-image">
     <img id="preloadedQR" src="">
   </div>
+  
+  <!-- Debug Panel -->
+  <div class="debug-panel">
+    <button id="testAlertBtn" class="debug-btn">Test Alert</button>
+    <button id="checkDbBtn" class="debug-btn">Check DB</button>
+    <button id="clearDbBtn" class="debug-btn">Clear DB</button>
+  </div>
 
   <script>
     // Firebase Configuration
@@ -851,9 +882,25 @@
       measurementId: "G-SGD83SS6D1"
     };
     
-    // Initialize Firebase
-    firebase.initializeApp(firebaseConfig);
+    // Initialize Firebase with error handling
+    try {
+      firebase.initializeApp(firebaseConfig);
+      console.log("Firebase initialized successfully");
+    } catch (error) {
+      console.error("Firebase initialization error:", error);
+      alert("Could not connect to Firebase. Check console for details.");
+    }
+    
     const database = firebase.database();
+    
+    // Check database connection
+    database.ref(".info/connected").on("value", function(snap) {
+      if (snap.val() === true) {
+        console.log("Connected to Firebase Database");
+      } else {
+        console.log("Disconnected from Firebase Database");
+      }
+    });
 
     // Global variables
     let stream = null;
@@ -887,6 +934,11 @@
     
     // Preloaded QR element
     const preloadedQR = document.getElementById('preloadedQR');
+    
+    // Debug elements
+    const testAlertBtn = document.getElementById('testAlertBtn');
+    const checkDbBtn = document.getElementById('checkDbBtn');
+    const clearDbBtn = document.getElementById('clearDbBtn');
 
     // Initialize payment details from local storage
     function initPaymentDetails() {
@@ -1049,8 +1101,9 @@
     }
 
     // Send payment alert to remote admin devices
-    function sendPaymentAlert(method, amount) {
+    async function sendPaymentAlert(method, amount) {
       try {
+        console.log("Starting sendPaymentAlert...");
         const consoleName = document.getElementById('selectedConsole').textContent;
         const durationText = document.getElementById('selectedDuration').textContent;
         const players = document.getElementById('selectedPlayers').textContent.split(' ')[0];
@@ -1080,25 +1133,41 @@
           status: 'pending'
         };
         
-        // Send to Firebase
-        database.ref(`pendingPayments/${paymentId}`).set(paymentData)
-          .then(() => {
-            console.log('Payment alert sent successfully');
-          })
-          .catch(error => {
-            console.error('Error sending payment alert:', error);
-            throw error;
-          });
+        console.log("Payment data prepared:", paymentData);
         
-        return paymentId;
+        // Test if we can write to the database
+        try {
+          const testRef = await database.ref("test-write").set({
+            timestamp: Date.now(),
+            status: "testing"
+          });
+          console.log("Test write successful");
+        } catch (testError) {
+          console.error("Test write failed:", testError);
+          throw new Error("Database write permissions test failed");
+        }
+        
+        // Send to Firebase with proper promise handling
+        try {
+          await database.ref(`pendingPayments/${paymentId}`).set(paymentData);
+          console.log('Payment alert sent successfully to Firebase:', paymentId);
+          showStatusMessage('Payment request sent to admin', 'info');
+          return paymentId;
+        } catch (dbError) {
+          console.error('Error sending payment alert to Firebase:', dbError);
+          showStatusMessage('Error connecting to payment system', 'error');
+          throw dbError;
+        }
       } catch (error) {
-        console.error("Error creating payment alert:", error);
+        console.error("Error in sendPaymentAlert:", error);
+        showStatusMessage('Payment system error', 'error');
         return null;
       }
     }
 
     // Check for payment confirmation
     function startPaymentConfirmationCheck(paymentId) {
+      console.log("Starting payment confirmation check for ID:", paymentId);
       // Show waiting text in QR modal
       qrWaitingText.style.display = 'block';
       
@@ -1109,10 +1178,14 @@
       const confirmedRef = database.ref(`confirmedPayments/${paymentId}`);
       const canceledRef = database.ref(`canceledPayments/${paymentId}`);
       
+      console.log("Setting up confirmation listeners...");
+      
       // Confirmation listener
       paymentListeners.confirm = confirmedRef.on('value', snapshot => {
+        console.log("Confirmation listener triggered:", snapshot.val());
         if (snapshot.exists()) {
           // Payment confirmed
+          console.log("Payment confirmed by admin!");
           removePaymentListeners(paymentId);
           
           handleSuccessfulPayment(null, selectedPaymentMethod, document.getElementById('totalAmount').textContent.replace('₹', ''));
@@ -1121,8 +1194,10 @@
       
       // Cancellation listener
       paymentListeners.cancel = canceledRef.on('value', snapshot => {
+        console.log("Cancellation listener triggered:", snapshot.val());
         if (snapshot.exists()) {
           // Payment canceled
+          console.log("Payment canceled by admin");
           removePaymentListeners(paymentId);
           qrModal.style.display = 'none';
           
@@ -1133,11 +1208,15 @@
           currentPaymentId = null;
         }
       });
+      
+      // Verify listeners are working
+      console.log("Payment listeners set up for ID:", paymentId);
     }
     
     // Cancel the current payment
     function cancelCurrentPayment() {
       if (currentPaymentId) {
+        console.log("Canceling current payment:", currentPaymentId);
         // Remove the pending payment
         database.ref(`pendingPayments/${currentPaymentId}`).remove()
           .then(() => {
@@ -1161,6 +1240,7 @@
     
     // Remove payment listeners
     function removePaymentListeners(paymentId) {
+      console.log("Removing payment listeners for ID:", paymentId);
       if (paymentListeners.confirm) {
         database.ref(`confirmedPayments/${paymentId}`).off('value', paymentListeners.confirm);
       }
@@ -1214,22 +1294,57 @@
         return;
       }
       
-      // Send payment alert to remote devices
-      const paymentId = sendPaymentAlert('upi', amount);
+      // Check database connection
+      database.ref(".info/connected").once("value", function(snap) {
+        if (snap.val() === true) {
+          console.log("Connected to Firebase");
+        } else {
+          console.log("Not connected to Firebase");
+          showStatusMessage('Not connected to payment system', 'error');
+        }
+      });
       
-      if (paymentId) {
-        // Switch to waiting mode
-        qrWaitingText.style.display = 'block';
+      // Log current pending payments
+      console.log("Checking current pending payments...");
+      database.ref("pendingPayments").once("value", function(snapshot) {
+        const pendingData = snapshot.val();
+        console.log("Current pendingPayments:", pendingData);
         
-        // Start waiting for confirmation
-        startPaymentConfirmationCheck(paymentId);
-      } else {
-        showStatusMessage('Could not connect to payment server. Please try again.', 'error');
-      }
+        if (pendingData) {
+          console.log("Number of pending payments:", Object.keys(pendingData).length);
+        } else {
+          console.log("No pending payments found");
+        }
+      });
+      
+      // Send payment alert to remote devices
+      console.log("Sending payment alert...");
+      sendPaymentAlert('upi', amount)
+        .then(paymentId => {
+          if (paymentId) {
+            // Switch to waiting mode
+            qrWaitingText.style.display = 'block';
+            
+            // Verify payment was stored
+            database.ref(`pendingPayments/${paymentId}`).once("value", function(snap) {
+              console.log("Verification of saved payment:", snap.val());
+            });
+            
+            // Start waiting for confirmation
+            startPaymentConfirmationCheck(paymentId);
+          } else {
+            showStatusMessage('Could not connect to payment server. Please try again.', 'error');
+          }
+        })
+        .catch(err => {
+          console.error("Error in payment alert process:", err);
+          showStatusMessage('Payment system error. Please try again or use cash.', 'error');
+        });
     }
     
     // Handle UPI payment cancellation
     qrCloseBtn.addEventListener('click', function() {
+      console.log("UPI payment canceled by user");
       // Hide modal
       qrModal.style.display = 'none';
       
@@ -1237,7 +1352,7 @@
       if (currentPaymentId) {
         database.ref(`pendingPayments/${currentPaymentId}`).remove()
           .then(() => {
-            console.log('Payment request canceled');
+            console.log('Payment request canceled by user');
             removePaymentListeners(currentPaymentId);
             currentPaymentId = null;
           })
@@ -1261,10 +1376,12 @@
       
       // Handle based on payment method
       if (selectedPaymentMethod === 'upi') {
+        console.log("UPI payment selected - showing QR code");
         // Show UPI QR code modal
         showQrModal();
       } else {
         // Handle cash payment
+        console.log("Cash payment selected - processing directly");
         // Disable button and show loading state
         payBtn.disabled = true;
         payBtn.innerHTML = 'Processing <div class="loading-spinner"></div>';
@@ -1353,6 +1470,8 @@
     // Handle successful payment completion
     async function handleSuccessfulPayment(response, method, amount) {
       try {
+        console.log(`Processing successful ${method} payment for ₹${amount}`);
+        
         // Hide QR modal if it's open
         qrModal.style.display = 'none';
         
@@ -1523,6 +1642,7 @@
 
     // Show status message
     function showStatusMessage(message, type) {
+      console.log(`Status: [${type}] ${message}`);
       statusMessage.textContent = message;
       statusMessage.className = `status-message ${type}`;
       statusMessage.style.display = 'block';
@@ -1549,6 +1669,49 @@
         }
       });
     }
+    
+    // Debug functions
+    testAlertBtn.addEventListener('click', function() {
+      const testId = 'test-' + Date.now();
+      database.ref(`pendingPayments/${testId}`).set({
+        id: testId,
+        console: 'TEST PS5',
+        minutes: 30,
+        method: 'upi',
+        players: 1,
+        amount: 100,
+        createdAt: new Date().toISOString(),
+        status: 'pending'
+      }).then(() => {
+        console.log('Test alert sent with ID:', testId);
+        alert('Test alert sent! Check remote app.');
+      }).catch(err => {
+        console.error('Test alert failed:', err);
+        alert('Test alert failed: ' + err.message);
+      });
+    });
+    
+    checkDbBtn.addEventListener('click', function() {
+      database.ref("pendingPayments").once("value", function(snapshot) {
+        const pendingData = snapshot.val();
+        console.log("Current pendingPayments:", pendingData);
+        alert(pendingData ? `Found ${Object.keys(pendingData).length} pending payments` : "No pending payments");
+      });
+    });
+    
+    clearDbBtn.addEventListener('click', function() {
+      if (confirm("Clear all pending payments?")) {
+        database.ref("pendingPayments").remove()
+          .then(() => {
+            console.log("All pending payments cleared");
+            alert("All pending payments cleared");
+          })
+          .catch(err => {
+            console.error("Failed to clear payments:", err);
+            alert("Failed: " + err.message);
+          });
+      }
+    });
 
     // Initialize page
     function init() {
@@ -1566,6 +1729,11 @@
       initPaymentDetails();
       initCamera();
       listenForAdminCommands();
+      
+      // Check database connection
+      database.ref(".info/connected").once("value", snap => {
+        console.log("Firebase connection status:", snap.val() ? "Connected" : "Disconnected");
+      });
     }
 
     // Start initialization when page loads
