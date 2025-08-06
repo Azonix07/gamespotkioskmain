@@ -719,7 +719,7 @@
       cursor: pointer;
     }
     
-    /* ESP32 Integration - Payment Success Notification */
+    /* ESP32 Integration - Payment Status Indicator */
     .esp32-badge {
       position: fixed;
       bottom: 20px;
@@ -1061,7 +1061,7 @@
       console.log('Direct completion listener setup complete');
     }
 
-    // Handle direct completion without redirect
+    // Handle direct completion from ESP32
     function handleDirectCompletion() {
       try {
         const amount = document.getElementById('totalAmount').textContent.replace('₹', '');
@@ -1083,7 +1083,7 @@
             <div style="font-size: 64px; margin-bottom: 20px;">✓</div>
             <div class="waiting-title" style="color: white;">Payment Successful!</div>
             <div class="waiting-message">Your session will start shortly...</div>
-            <div class="waiting-message" style="margin-top: 20px;">No need to return to kiosk</div>
+            <div class="waiting-message" style="margin-top: 20px;">Redirecting to home screen...</div>
           </div>
         `;
         
@@ -1166,6 +1166,11 @@
           removePaymentListeners(currentPaymentId);
           currentPaymentId = null;
         }
+        
+        // Redirect to index.html after a delay
+        setTimeout(() => {
+          window.location.href = 'index.html';
+        }, 2000);
         
       } catch (err) {
         console.error('Direct completion processing error:', err);
@@ -1436,7 +1441,7 @@
       }
     }
 
-    // Check for payment confirmation
+    // Check for payment confirmation - UPDATED for ESP32 integration
     function startPaymentConfirmationCheck(paymentId) {
       console.log("Starting payment confirmation check for ID:", paymentId);
       // Show waiting text in QR modal
@@ -1456,16 +1461,16 @@
         console.log("Confirmation listener triggered:", snapshot.val());
         if (snapshot.exists()) {
           // Payment confirmed
-          console.log("Payment confirmed by Paytm sound detection!");
+          console.log("Payment confirmed!");
           removePaymentListeners(paymentId);
           
-          // Check if this is a direct-to-payment-html confirmation from ESP32
+          // Check if this is from ESP32
           const paymentData = snapshot.val();
-          if (paymentData && paymentData.directToPaymentHtml === true) {
-            // Use the special direct completion handler
+          if (paymentData && paymentData.confirmedBy === 'ESP32-AutoConfirm') {
+            console.log("ESP32 auto-confirmation detected!");
             handleDirectCompletion();
           } else {
-            // Use the standard redirect flow
+            // Standard confirmation flow
             handleSuccessfulPayment(null, selectedPaymentMethod, document.getElementById('totalAmount').textContent.replace('₹', ''));
           }
         }
@@ -1751,7 +1756,22 @@
         console.error('Payment processing error:', err);
         showStatusMessage(`Payment processing error: ${err.message}. Please contact support.`, 'error');
         
-             // Clean up Firebase listeners
+               // Clean up Firebase listeners
+        if (currentPaymentId) {
+          removePaymentListeners(currentPaymentId);
+          currentPaymentId = null;
+        }
+      }
+    }
+
+    // Back button handler
+    backBtn.addEventListener('click', () => {
+      // Stop camera stream if it's active
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+      
+      // Clean up Firebase listeners
       if (currentPaymentId) {
         removePaymentListeners(currentPaymentId);
         currentPaymentId = null;
@@ -1784,7 +1804,7 @@
         method: 'upi',
         players: 1,
         amount: 100,
-        createdAt: new Date().toISOString(),
+        createdAt: "2025-08-06T15:19:59Z",
         status: 'pending'
       }).then(() => {
         console.log('Test alert sent with ID:', testId);
@@ -1829,7 +1849,7 @@
               const paymentData = snapshot.val();
               
               // Add confirmation timestamp
-              paymentData.confirmedAt = new Date().toISOString();
+              paymentData.confirmedAt = "2025-08-06T15:19:59Z";
               paymentData.confirmedBy = 'ESP32-AutoConfirm';
               
               // Create in confirmed payments
@@ -1857,7 +1877,7 @@
         // Set up the direct completion node
         database.ref("directComplete").set({
           paymentId: currentPaymentId,
-          timestamp: "2025-08-06T15:01:51Z",
+          timestamp: "2025-08-06T15:19:59Z",
           status: "completed"
         }).then(() => {
           console.log("ESP32 direct completion test successful");
@@ -1877,7 +1897,7 @@
           method: 'upi',
           players: 1,
           amount: 100,
-          createdAt: new Date().toISOString(),
+          createdAt: "2025-08-06T15:19:59Z",
           status: 'pending'
         }).then(() => {
           console.log('ESP32 test payment created:', testId);
@@ -1888,7 +1908,7 @@
           // Now trigger the direct completion
           return database.ref("directComplete").set({
             paymentId: testId,
-            timestamp: "2025-08-06T15:01:51Z",
+            timestamp: "2025-08-06T15:19:59Z",
             status: "completed"
           });
         }).then(() => {
@@ -1900,7 +1920,7 @@
       }
     });
 
-    // Initialize page
+    // Initialize page - UPDATED to include ESP32 listener
     window.onload = function() {
       console.log("Page loaded - initializing...");
       // First initialize payment details to ensure they show correctly
