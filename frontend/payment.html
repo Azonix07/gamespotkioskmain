@@ -828,7 +828,7 @@
       
       <div class="qr-details">
         <div class="qr-amount">₹<span id="qrAmountDisplay">130</span></div>
-        <div class="qr-upi-id" id="qrUpiId">gamespotkdlr@okhdfcbank</div>
+        <div class="qr-upi-id" id="qrUpiId">paytm.s15qoa1@pty</div>
         <div class="qr-instructions">
           1. Open any UPI app (GPay, PhonePe, Paytm, etc.)<br>
           2. Scan this QR code or enter UPI ID manually<br>
@@ -840,7 +840,7 @@
       <div class="qr-footer">
         <button id="qrCloseBtn" class="qr-close-btn">Cancel</button>
         <div id="qrWaitingText" style="display: none;">
-          <span class="waiting-status">Waiting for admin confirmation</span>
+          <span class="waiting-status">Waiting for payment confirmation</span>
           <div class="loading-spinner" style="display: inline-block; width: 16px; height: 16px; margin-left: 8px; vertical-align: middle;"></div>
         </div>
       </div>
@@ -852,7 +852,7 @@
     <div class="waiting-container">
       <div class="waiting-spinner"></div>
       <div class="waiting-title">Payment Pending</div>
-      <div class="waiting-message">Waiting for payment confirmation from admin...</div>
+      <div class="waiting-message">Waiting for payment confirmation...</div>
       <button id="waitingCancelBtn" class="waiting-cancel">Cancel</button>
     </div>
   </div>
@@ -905,7 +905,7 @@
     // Global variables
     let stream = null;
     let selectedPaymentMethod = null;
-    const upiId = "gamespotkdlr@okhdfcbank";
+    const upiId = "paytm.s15qoa1@pty";
     let currentPaymentId = null;
     let paymentListeners = {};
     
