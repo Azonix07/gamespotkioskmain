@@ -7,10 +7,12 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <!-- Firebase Scripts - Changed to v8.10.1 for better compatibility -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <!-- Using the oldest, most compatible Firebase version -->
+  <script src="https://www.gstatic.com/firebasejs/7.24.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/7.24.0/firebase-database.js"></script>
+  <!-- Rest of your CSS remains the same -->
   <style>
+    /* All your original CSS styles remain the same */
     /* Global Styling */
     * {
       margin: 0;
@@ -709,6 +711,7 @@
       font-size: 10px;
       display: flex;
       gap: 5px;
+      flex-wrap: wrap;
     }
     
     .debug-btn {
@@ -764,6 +767,30 @@
       50% { opacity: 1; }
       100% { opacity: 0.5; }
     }
+    
+    /* Debug log */
+    #debug-log {
+      position: fixed;
+      bottom: 50px;
+      right: 10px;
+      width: 250px;
+      max-height: 200px;
+      overflow-y: auto;
+      background: rgba(0,0,0,0.8);
+      color: #ccc;
+      font-family: monospace;
+      font-size: 10px;
+      padding: 5px;
+      border-radius: 4px;
+      z-index: 9998;
+      display: none;
+    }
+    
+    .log-item {
+      margin-bottom: 3px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      padding-bottom: 3px;
+    }
   </style>
 </head>
 <body>
@@ -775,6 +802,9 @@
 
   <!-- Overlay -->
   <div class="overlay"></div>
+  
+  <!-- Debug log -->
+  <div id="debug-log"></div>
 
   <!-- Test Mode Badge -->
   <div class="test-mode-badge">TEST MODE</div>
@@ -914,101 +944,57 @@
   
   <!-- Debug Panel -->
   <div class="debug-panel">
-    <button id="testAlertBtn" class="debug-btn">Test Alert</button>
-    <button id="checkDbBtn" class="debug-btn">Check DB</button>
-    <button id="clearDbBtn" class="debug-btn">Clear DB</button>
-    <button id="testEsp32Btn" class="debug-btn">Test ESP32</button>
+    <button id="skipCameraBtn" class="debug-btn">Skip Camera</button>
+    <button id="restartFirebaseBtn" class="debug-btn">Restart Firebase</button>
     <button id="restartCameraBtn" class="debug-btn">Restart Camera</button>
-    <button id="reconnectBtn" class="debug-btn">Reconnect</button>
+    <button id="testAlertBtn" class="debug-btn">Test Alert</button>
+    <button id="showLogBtn" class="debug-btn">Show Log</button>
+    <button id="clearDbBtn" class="debug-btn">Clear DB</button>
   </div>
 
   <script>
-    // Log important events to help with debugging
-    function logDebug(message) {
-      console.log(`[${new Date().toLocaleTimeString()}] ${message}`);
-    }
-
-    // Firebase Configuration
-    const firebaseConfig = {
-      apiKey: "AIzaSyDUIUj6uvUfWVxyHfgLWzahJAelrFqpIEc",
-      authDomain: "gamespotkiosk.firebaseapp.com",
-      databaseURL: "https://gamespotkiosk-default-rtdb.asia-southeast1.firebasedatabase.app",
-      projectId: "gamespotkiosk",
-      storageBucket: "gamespotkiosk.appspot.com",
-      messagingSenderId: "537976874541",
-      appId: "1:537976874541:web:9e847488e9fc6b78913aa4",
-      measurementId: "G-SGD83SS6D1"
-    };
+    // Debug logging system
+    const debugLog = document.getElementById('debug-log');
+    let logVisible = false;
     
-    // Initialize Firebase with error handling - Changed to use v8 SDK
-    let database;
-    let firebaseInitialized = false;
-    
-    try {
-      logDebug("Initializing Firebase...");
-      firebase.initializeApp(firebaseConfig);
-      database = firebase.database();
-      firebaseInitialized = true;
-      logDebug("Firebase initialized successfully");
-    } catch (error) {
-      console.error("Firebase initialization error:", error);
-      showStatusMessage("Could not connect to Firebase. Retrying...", "error");
+    function log(message, type = 'info') {
+      const time = new Date().toLocaleTimeString();
+      console.log(`[${time}] [${type}] ${message}`);
       
-      // Retry initialization after a delay
-      setTimeout(() => {
-        try {
-          if (!firebaseInitialized) {
-            firebase.initializeApp(firebaseConfig);
-            database = firebase.database();
-            firebaseInitialized = true;
-            logDebug("Firebase initialized successfully on retry");
-          }
-        } catch (retryError) {
-          console.error("Firebase retry initialization failed:", retryError);
-        }
-      }, 2000);
-    }
-    
-    // Check database connection with error handling
-    function checkDatabaseConnection() {
-      try {
-        const connectedRef = database.ref(".info/connected");
-        connectedRef.on("value", function(snap) {
-          const connectionIndicator = document.getElementById('connectionIndicator');
-          const connectionStatus = document.getElementById('connectionStatus');
-          
-          if (snap.val() === true) {
-            logDebug("Connected to Firebase Database");
-            connectionIndicator.className = "connection-indicator connected";
-            connectionStatus.textContent = "Connected";
-          } else {
-            logDebug("Disconnected from Firebase Database");
-            connectionIndicator.className = "connection-indicator disconnected";
-            connectionStatus.textContent = "Disconnected";
-            
-            // Attempt reconnection
-            setTimeout(() => {
-              if (firebaseInitialized) {
-                connectionIndicator.className = "connection-indicator reconnecting";
-                connectionStatus.textContent = "Reconnecting...";
-                database.goOnline();
-                logDebug("Attempting reconnection to Firebase");
-              }
-            }, 3000);
-          }
-        }, function(error) {
-          console.error("Firebase connection monitoring error:", error);
-        });
-      } catch (error) {
-        console.error("Error setting up connection monitor:", error);
+      // Add to visual log
+      const logItem = document.createElement('div');
+      logItem.className = `log-item log-${type}`;
+      logItem.textContent = `[${time}] ${message}`;
+      debugLog.appendChild(logItem);
+      
+      // Limit log items
+      if (debugLog.children.length > 50) {
+        debugLog.removeChild(debugLog.children[0]);
       }
+      
+      // Auto-scroll to bottom
+      debugLog.scrollTop = debugLog.scrollHeight;
     }
     
-    // Call this after firebase init
-    if (firebaseInitialized) {
-      checkDatabaseConnection();
-    } else {
-      document.getElementById('connectionStatus').textContent = "Waiting for Firebase...";
+    document.getElementById('showLogBtn').addEventListener('click', function() {
+      logVisible = !logVisible;
+      debugLog.style.display = logVisible ? 'block' : 'none';
+      this.textContent = logVisible ? 'Hide Log' : 'Show Log';
+    });
+    
+    // Show status message helper function
+    function showStatusMessage(message, type) {
+      const statusMessage = document.getElementById('statusMessage');
+      statusMessage.textContent = message;
+      statusMessage.className = `status-message ${type}`;
+      statusMessage.style.display = 'block';
+      
+      log(message, type);
+      
+      // Hide after 5 seconds
+      setTimeout(() => {
+        statusMessage.style.display = 'none';
+      }, 5000);
     }
 
     // Global variables
@@ -1016,9 +1002,9 @@
     let selectedPaymentMethod = null;
     const upiId = "paytm.s15qoa1@pty";
     let currentPaymentId = null;
-    let paymentListeners = {};
-    let confirmationInterval = null;
-    let cameraInitAttempts = 0;
+    let database = null;
+    let firebaseInitialized = false;
+    let cameraInitialized = false;
     
     // DOM elements
     const cameraFeed = document.getElementById('cameraFeed');
@@ -1026,175 +1012,188 @@
     const cameraOverlay = document.getElementById('cameraOverlay');
     const payBtn = document.getElementById('payBtn');
     const backBtn = document.getElementById('backBtn');
-    const statusMessage = document.getElementById('statusMessage');
-    const paymentMethods = document.querySelectorAll('.payment-method');
+    const connectionIndicator = document.getElementById('connectionIndicator');
+    const connectionStatus = document.getElementById('connectionStatus');
     
-    // QR Modal elements
-    const qrModal = document.getElementById('qrModal');
-    const qrCodeImage = document.getElementById('qrCodeImage');
-    const qrLoading = document.getElementById('qrLoading');
-    const qrFallback = document.getElementById('qrFallback');
-    const qrAmountDisplay = document.getElementById('qrAmountDisplay');
-    const qrUpiId = document.getElementById('qrUpiId');
-    const qrCloseBtn = document.getElementById('qrCloseBtn');
-    const qrWaitingText = document.getElementById('qrWaitingText');
+    // Initialize Firebase (using more basic approach)
+    function initFirebase() {
+      try {
+        log("Initializing Firebase...");
+        connectionStatus.textContent = "Initializing Firebase...";
+        
+        if (window.firebase) {
+          // Initialize Firebase if not already done
+          if (!firebaseInitialized) {
+            const config = {
+              apiKey: "AIzaSyDUIUj6uvUfWVxyHfgLWzahJAelrFqpIEc",
+              authDomain: "gamespotkiosk.firebaseapp.com",
+              databaseURL: "https://gamespotkiosk-default-rtdb.asia-southeast1.firebasedatabase.app",
+              projectId: "gamespotkiosk",
+              storageBucket: "gamespotkiosk.appspot.com",
+              messagingSenderId: "537976874541",
+              appId: "1:537976874541:web:9e847488e9fc6b78913aa4"
+            };
+            
+            firebase.initializeApp(config);
+            database = firebase.database();
+            firebaseInitialized = true;
+            log("Firebase initialized successfully");
+            
+            // Set up connection monitoring
+            const connectedRef = database.ref(".info/connected");
+            connectedRef.on("value", function(snap) {
+              const isConnected = snap.val() === true;
+              
+              connectionIndicator.className = isConnected ? 
+                "connection-indicator connected" : "connection-indicator disconnected";
+                
+              connectionStatus.textContent = isConnected ? "Connected" : "Disconnected";
+              
+              log(isConnected ? "Connected to Firebase" : "Disconnected from Firebase", 
+                 isConnected ? "success" : "error");
+                 
+              if (!isConnected) {
+                // Try to reconnect after a delay
+                setTimeout(() => {
+                  connectionIndicator.className = "connection-indicator reconnecting";
+                  connectionStatus.textContent = "Reconnecting...";
+                  
+                  // Force reconnection
+                  try {
+                    database.goOnline();
+                    log("Forcing Firebase reconnection", "info");
+                  } catch (e) {
+                    log("Error forcing reconnection: " + e.message, "error");
+                  }
+                }, 3000);
+              }
+            });
+            
+            return true;
+          } else {
+            log("Firebase already initialized", "info");
+            return true;
+          }
+        } else {
+          log("Firebase library not loaded", "error");
+          connectionStatus.textContent = "Firebase library not loaded";
+          return false;
+        }
+      } catch (error) {
+        log("Firebase initialization error: " + error.message, "error");
+        connectionStatus.textContent = "Firebase init error";
+        return false;
+      }
+    }
     
-    // Waiting overlay elements
-    const waitingOverlay = document.getElementById('waitingOverlay');
-    const waitingCancelBtn = document.getElementById('waitingCancelBtn');
-    
-    // Preloaded QR element
-    const preloadedQR = document.getElementById('preloadedQR');
-    
-    // Debug elements
-    const testAlertBtn = document.getElementById('testAlertBtn');
-    const checkDbBtn = document.getElementById('checkDbBtn');
-    const clearDbBtn = document.getElementById('clearDbBtn');
-    const testEsp32Btn = document.getElementById('testEsp32Btn');
-    const restartCameraBtn = document.getElementById('restartCameraBtn');
-    const reconnectBtn = document.getElementById('reconnectBtn');
-
-    // Initialize payment details from local storage
-    function initPaymentDetails() {
-      // Get console information
-      const consoleName = localStorage.getItem('selectedConsole') || 'PS5';
-      
-      // Get duration information
-      const duration = localStorage.getItem('selectedDuration') || '60';
-      const durationMin = parseInt(duration);
-      
-      // Format duration display
-      let durationDisplay;
-      if (durationMin === 30) {
-        durationDisplay = "30 min";
-      } else if (durationMin === 60) {
-        durationDisplay = "1 hour";
-      } else if (durationMin === 90) {
-        durationDisplay = "1.5 hour";
-      } else if (durationMin === 120) {
-        durationDisplay = "2 hour";
-      } else {
-        durationDisplay = `${durationMin} minutes`;
+    // Initialize camera with multiple fallback strategies
+    async function initCamera() {
+      if (cameraInitialized && stream && stream.active) {
+        log("Camera already initialized and active", "info");
+        return true;
       }
       
-      // Get player count
-      const players = localStorage.getItem('selectedControllers') || '1';
+      cameraOverlay.style.display = 'flex';
+      cameraOverlay.querySelector('.camera-message').innerHTML = 
+        'Camera activating... <div class="loading-spinner" style="display: inline-block;"></div>';
       
-      // Get total price
-      const totalPrice = localStorage.getItem('totalPrice') || '130';
-
-      // Update UI
-      document.getElementById('selectedConsole').textContent = consoleName;
-      document.getElementById('selectedDuration').textContent = durationDisplay;
-      document.getElementById('selectedPlayers').textContent = `${players} Player${players > 1 ? 's' : ''}`;
-      document.getElementById('totalAmount').textContent = `₹${totalPrice}`;
-      qrAmountDisplay.textContent = totalPrice;
-      qrUpiId.textContent = upiId;
+      log("Initializing camera...");
       
-      // Preload QR code
-      preloadQRCode(totalPrice);
-    }
-    
-    // Preload QR code
-    function preloadQRCode(amount) {
-      const payeeName = encodeURIComponent("Gamespot Kiosk");
-      const upiPaymentUrl = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${payeeName}&am=${amount}&cu=INR&tn=Gaming%20Session`;
-      const googleChartUrl = `https://chart.googleapis.com/chart?cht=qr&chs=300x300&chl=${encodeURIComponent(upiPaymentUrl)}&chld=H|1`;
-      
-      // Set the src to preload
-      preloadedQR.src = googleChartUrl;
-    }
-
-    // Improved camera initialization with multiple fallbacks
-    async function initCamera() {
       try {
-        logDebug("Initializing camera, attempt #" + (++cameraInitAttempts));
-        cameraOverlay.style.display = 'flex';
-        cameraOverlay.querySelector('.camera-message').innerHTML = 
-          'Camera activating... <div class="loading-spinner" style="display: inline-block;"></div>';
-        
-        // Try with ideal settings
+        // Strategy 1: Try with very basic settings first
         try {
-          logDebug("Trying camera with ideal settings");
-          stream = await navigator.mediaDevices.getUserMedia({ 
-            video: { 
-              width: { ideal: 1280 },
-              height: { ideal: 720 },
-              facingMode: "user"
-            } 
-          });
+          log("Trying camera with basic settings");
+          stream = await navigator.mediaDevices.getUserMedia({ video: true });
           
           cameraFeed.srcObject = stream;
-          cameraOverlay.style.display = 'none';
+          cameraFeed.onloadedmetadata = () => {
+            cameraOverlay.style.display = 'none';
+            cameraInitialized = true;
+            enablePaymentButtons();
+            log("Camera initialized successfully with basic settings", "success");
+          };
+          return true;
+        } catch (err1) {
+          log("Basic camera settings failed: " + err1.message, "error");
           
-          showStatusMessage('Camera activated. Select payment method to continue.', 'info');
-          logDebug("Camera activated with ideal settings");
-          return;
-        } catch (err) {
-          logDebug("Failed with ideal settings: " + err.message);
-          
-          // Try with basic settings
+          // Strategy 2: Try with specific low resolution
           try {
-            logDebug("Trying camera with basic settings");
-            stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            log("Trying camera with low resolution settings");
+            stream = await navigator.mediaDevices.getUserMedia({
+              video: {
+                width: { ideal: 320 },
+                height: { ideal: 240 },
+                facingMode: "user"
+              }
+            });
             
             cameraFeed.srcObject = stream;
-            cameraOverlay.style.display = 'none';
-            
-            showStatusMessage('Camera activated with basic settings. Select payment method to continue.', 'info');
-            logDebug("Camera activated with basic settings");
-            return;
+            cameraFeed.onloadedmetadata = () => {
+              cameraOverlay.style.display = 'none';
+              cameraInitialized = true;
+              enablePaymentButtons();
+              log("Camera initialized with low resolution", "success");
+            };
+            return true;
           } catch (err2) {
-            logDebug("Failed with basic settings: " + err2.message);
+            log("Low resolution camera failed: " + err2.message, "error");
             
-            // Try with specific fallback settings
+            // Strategy 3: Try with environment camera
             try {
-              logDebug("Trying camera with fallback settings");
-              stream = await navigator.mediaDevices.getUserMedia({ 
-                video: { 
-                  width: { exact: 640 },
-                  height: { exact: 480 },
-                }
+              log("Trying with environment camera");
+              stream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: "environment" }
               });
               
               cameraFeed.srcObject = stream;
-              cameraOverlay.style.display = 'none';
-              
-              showStatusMessage('Camera activated with fallback settings. Select payment method to continue.', 'info');
-              logDebug("Camera activated with fallback settings");
-              return;
+              cameraFeed.onloadedmetadata = () => {
+                cameraOverlay.style.display = 'none';
+                cameraInitialized = true;
+                enablePaymentButtons();
+                log("Camera initialized with environment camera", "success");
+              };
+              return true;
             } catch (err3) {
-              throw new Error("All camera initialization methods failed");
+              throw new Error("All camera initialization attempts failed");
             }
           }
         }
-      } catch (err) {
-        console.error('Camera error:', err);
+      } catch (error) {
+        log("Camera initialization failed: " + error.message, "error");
+        
+        // Update UI to allow proceeding without camera
         cameraOverlay.innerHTML = `
           <div class="camera-message">
-            Camera error: ${err.message}<br>
-            Please allow camera access to continue.<br><br>
+            Camera error: ${error.message}<br>
             <button class="btn btn-orange" onclick="initCamera()">Retry Camera</button>
-            <button class="btn btn-gray" onclick="proceedWithoutCamera()">Continue Without Camera</button>
+            <button class="btn btn-gray" onclick="skipCamera()">Continue Without Camera</button>
           </div>
         `;
-        showStatusMessage(`Camera error: ${err.message}. Please allow camera access.`, 'error');
-        logDebug("Camera initialization failed: " + err.message);
+        
+        showStatusMessage("Camera error. You can continue without it.", "error");
+        return false;
       }
     }
-
-    // Function to proceed without camera
-    function proceedWithoutCamera() {
-      logDebug("Proceeding without camera");
-      cameraOverlay.style.display = 'flex';
+    
+    // Function to skip camera requirement
+    function skipCamera() {
+      log("Proceeding without camera", "info");
+      
       cameraOverlay.innerHTML = `
         <div class="camera-message">
-          Continuing without camera.<br>
-          Please select a payment method.
+          Continuing without camera
         </div>
       `;
       
-      // Enable payment selection without camera
+      // Enable buttons even without camera
+      enablePaymentButtons();
+      showStatusMessage("Proceeding without camera. Select a payment method.", "info");
+    }
+    
+    document.getElementById('skipCameraBtn').addEventListener('click', skipCamera);
+    
+    // Enable payment method selection
+    function enablePaymentButtons() {
       document.querySelectorAll('.payment-method').forEach(method => {
         method.onclick = function() {
           // Remove selected class from all methods
@@ -1212,107 +1211,49 @@
           payBtn.disabled = false;
           payBtn.classList.remove('btn-disabled');
           
-          showStatusMessage(`Selected payment method: ${selectedPaymentMethod}`, 'info');
+          log("Selected payment method: " + selectedPaymentMethod);
+          showStatusMessage("Selected: " + selectedPaymentMethod, "info");
         };
       });
     }
-
-    // Improved capturePhoto function with null handling
-    function capturePhoto() {
-      try {
-        // If no camera stream, return null
-        if (!stream || !stream.active) {
-          logDebug("Cannot capture photo - no active camera stream");
-          return null;
-        }
-        
-        const context = canvas.getContext('2d');
-        
-        // Make sure the video is ready
-        if (cameraFeed.videoWidth === 0 || cameraFeed.videoHeight === 0) {
-          logDebug("Cannot capture photo - video not ready");
-          return null; // Camera not ready yet
-        }
-        
-        // Set canvas dimensions
-        canvas.width = cameraFeed.videoWidth * 0.5;  // 50% of original size
-        canvas.height = cameraFeed.videoHeight * 0.5;
-        
-        // Draw the video frame to the canvas (and flip it horizontally)
-        context.translate(canvas.width, 0);
-        context.scale(-1, 1);
-        context.drawImage(cameraFeed, 0, 0, cameraFeed.videoWidth, cameraFeed.videoHeight, 
-                         0, 0, canvas.width, canvas.height);
-        
-        // Return the data URL of the image
-        return canvas.toDataURL('image/jpeg', 0.7);
-      } catch (err) {
-        console.error("Error capturing photo:", err);
-        logDebug("Error capturing photo: " + err.message);
-        return null;
-      }
-    }
     
-    // Generate UPI QR code with better fallbacks
+    // Generate UPI QR code - simplified version
     function generateUpiQrCode(amount) {
+      const qrFallback = document.getElementById('qrFallback');
+      const qrLoading = document.getElementById('qrLoading');
+      const qrCodeImage = document.getElementById('qrCodeImage');
+      
       qrLoading.style.display = 'flex';
       qrFallback.style.display = 'none';
       
+      // Show UPI ID as text directly for reliability
+      document.getElementById('qrUpiId').textContent = upiId;
+      document.getElementById('qrAmountDisplay').textContent = amount;
+      
       try {
-        // Use the preloaded QR code if available
-        if (preloadedQR.complete && preloadedQR.naturalHeight !== 0) {
-          qrCodeImage.src = preloadedQR.src;
-          qrLoading.style.display = 'none';
-          logDebug("Using preloaded QR code");
-          return;
-        }
+        // Simple direct URL for QR code
+        const googleChartUrl = `https://chart.googleapis.com/chart?cht=qr&chs=300x300&chl=upi%3A%2F%2Fpay%3Fpa%3D${encodeURIComponent(upiId)}%26am%3D${amount}%26cu%3DINR&chld=H|1`;
         
-        // Generate new QR code
-        const payeeName = encodeURIComponent("Gamespot Kiosk");
-        const upiPaymentUrl = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${payeeName}&am=${amount}&cu=INR&tn=Gaming%20Session`;
-        const googleChartUrl = `https://chart.googleapis.com/chart?cht=qr&chs=300x300&chl=${encodeURIComponent(upiPaymentUrl)}&chld=H|1`;
-        
-        // Set image source
         qrCodeImage.onload = function() {
           qrLoading.style.display = 'none';
-          logDebug("QR code loaded successfully");
+          log("QR code loaded successfully");
         };
         
         qrCodeImage.onerror = function() {
-          console.error("Failed to load QR code from Google Charts");
+          log("QR code failed to load", "error");
           qrLoading.style.display = 'none';
           qrFallback.style.display = 'block';
-          
-          // Try using a backup QR code service
-          const backupQrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(upiPaymentUrl)}`;
-          logDebug("Trying backup QR service: " + backupQrUrl);
-          
-          qrCodeImage.onload = function() {
-            qrFallback.style.display = 'none';
-            logDebug("Backup QR code loaded successfully");
-          };
-          
-          qrCodeImage.onerror = function() {
-            qrFallback.style.display = 'block';
-            logDebug("All QR code services failed");
-            
-            // Show UPI ID as text and direct payment instructions
-            qrCodeImage.style.display = 'none';
-            qrFallback.style.display = 'block';
-            qrFallback.innerHTML = `
-              <strong>Direct Payment</strong><br>
-              Please pay ₹${amount} to:<br>
-              <strong>${upiId}</strong><br>
-              using any UPI app
-            `;
-          };
-          
-          qrCodeImage.src = backupQrUrl;
+          qrFallback.innerHTML = `
+            <strong>Direct Payment</strong><br>
+            Please pay ₹${amount} to:<br>
+            <strong>${upiId}</strong><br>
+            using any UPI app
+          `;
         };
         
         qrCodeImage.src = googleChartUrl;
       } catch (error) {
-        console.error("Error generating QR code:", error);
+        log("Error generating QR code: " + error.message, "error");
         qrLoading.style.display = 'none';
         qrFallback.style.display = 'block';
         qrFallback.innerHTML = `
@@ -1324,398 +1265,87 @@
       }
     }
 
-    // Send payment alert to remote admin devices
-    async function sendPaymentAlert(method, amount) {
+    // Initialize payment details from local storage
+    function initPaymentDetails() {
       try {
-        logDebug("Starting sendPaymentAlert...");
-        const consoleName = document.getElementById('selectedConsole').textContent;
-        const durationText = document.getElementById('selectedDuration').textContent;
-        const players = document.getElementById('selectedPlayers').textContent.split(' ')[0];
+        // Get console information
+        const consoleName = localStorage.getItem('selectedConsole') || 'PS5';
         
-        // Extract minutes from duration text
-        let minutes;
-        if (durationText.includes('min')) {
-          minutes = parseInt(durationText.match(/\d+/)[0]);
-        } else if (durationText.includes('hour')) {
-          if (durationText.includes('1.5')) {
-            minutes = 90;
-          } else {
-            minutes = parseInt(durationText.match(/\d+/)[0]) * 60;
-          }
+        // Get duration information
+        const duration = localStorage.getItem('selectedDuration') || '60';
+        const durationMin = parseInt(duration);
+        
+        // Format duration display
+        let durationDisplay;
+        if (durationMin === 30) {
+          durationDisplay = "30 min";
+        } else if (durationMin === 60) {
+          durationDisplay = "1 hour";
+        } else if (durationMin === 90) {
+          durationDisplay = "1.5 hour";
+        } else if (durationMin === 120) {
+          durationDisplay = "2 hour";
+        } else {
+          durationDisplay = `${durationMin} minutes`;
         }
         
-        // Create a pending payment object
-        const paymentId = `payment-${Date.now()}`;
-        const paymentData = {
-          id: paymentId,
-          console: consoleName,
-          minutes: minutes,
-          method: method,
-          players: parseInt(players),
-          amount: parseInt(amount),
-          createdAt: new Date().toISOString(),
-          status: 'pending'
-        };
+        // Get player count
+        const players = localStorage.getItem('selectedControllers') || '1';
         
-        logDebug("Payment data prepared: " + JSON.stringify(paymentData));
+        // Get total price
+        const totalPrice = localStorage.getItem('totalPrice') || '130';
+
+        // Update UI
+        document.getElementById('selectedConsole').textContent = consoleName;
+        document.getElementById('selectedDuration').textContent = durationDisplay;
+        document.getElementById('selectedPlayers').textContent = `${players} Player${players > 1 ? 's' : ''}`;
+        document.getElementById('totalAmount').textContent = `₹${totalPrice}`;
+        document.getElementById('qrAmountDisplay').textContent = totalPrice;
+        document.getElementById('qrUpiId').textContent = upiId;
         
-        // Check if Firebase is initialized
-        if (!firebaseInitialized || !database) {
-          throw new Error("Firebase not initialized");
-        }
-        
-        // Send to Firebase with proper promise handling and retries
-        let sendSuccess = false;
-        let retryCount = 0;
-        let error;
-        
-        while (!sendSuccess && retryCount < 3) {
-          try {
-            await database.ref(`pendingPayments/${paymentId}`).set(paymentData);
-            logDebug('Payment alert sent successfully to Firebase: ' + paymentId);
-            showStatusMessage('Payment request sent for confirmation', 'info');
-            sendSuccess = true;
-            return paymentId;
-          } catch (dbError) {
-            error = dbError;
-            retryCount++;
-            logDebug(`Error sending payment alert (attempt ${retryCount}): ${dbError.message}`);
-            await new Promise(resolve => setTimeout(resolve, 1000)); // Wait before retry
-          }
-        }
-        
-        if (!sendSuccess) {
-          throw error || new Error("Failed to send payment alert after retries");
-        }
+        log("Payment details loaded successfully");
       } catch (error) {
-        console.error("Error in sendPaymentAlert:", error);
-        showStatusMessage('Payment system error. Try again or use cash.', 'error');
+        log("Error loading payment details: " + error.message, "error");
+      }
+    }
+    
+    // Capture photo function - with error handling
+    function capturePhoto() {
+      try {
+        // If no camera stream, return null
+        if (!stream || !stream.active) {
+          log("Cannot capture photo - no active camera stream");
+          return null;
+        }
+        
+        const context = canvas.getContext('2d');
+        
+        // Make sure the video is ready
+        if (cameraFeed.videoWidth === 0 || cameraFeed.videoHeight === 0) {
+          log("Cannot capture photo - video not ready");
+          return null; // Camera not ready yet
+        }
+        
+        // Set canvas dimensions
+        canvas.width = cameraFeed.videoWidth * 0.5;  // 50% of original size
+        canvas.height = cameraFeed.videoHeight * 0.5;
+        
+        // Draw the video frame to the canvas (and flip it horizontally)
+        context.translate(canvas.width, 0);
+        context.scale(-1, 1);
+        context.drawImage(cameraFeed, 0, 0, cameraFeed.videoWidth, cameraFeed.videoHeight, 
+                       0, 0, canvas.width, canvas.height);
+        
+        // Return the data URL of the image
+        return canvas.toDataURL('image/jpeg', 0.7);
+      } catch (err) {
+        log("Error capturing photo: " + err.message, "error");
         return null;
       }
     }
 
-    // Robust payment confirmation listener
-    function setupRobustConfirmationListener(paymentId) {
-      logDebug("Setting up robust confirmation listener for: " + paymentId);
-      
-      // Clear any existing listeners
-      if (window.currentConfirmListener) {
-        try {
-          database.ref(window.currentConfirmListener.path).off('value', window.currentConfirmListener.handler);
-        } catch (e) {
-          console.log("Error clearing previous listener:", e);
-        }
-      }
-      
-      // Create new confirmation listener with error handling
-      const confirmedRef = database.ref(`confirmedPayments/${paymentId}`);
-      const confirmHandler = (snapshot) => {
-        try {
-          logDebug("Confirmation check triggered for: " + paymentId);
-          
-          if (snapshot.exists()) {
-            logDebug("Payment confirmed: " + paymentId);
-            
-            // Process the confirmation
-            try {
-              // Stop checking
-              if (confirmationInterval) {
-                clearInterval(confirmationInterval);
-                confirmationInterval = null;
-              }
-              
-              handleSuccessfulPayment(null, selectedPaymentMethod, document.getElementById('totalAmount').textContent.replace('₹', ''));
-            } catch (processError) {
-              console.error("Error processing confirmation:", processError);
-              alert("Payment confirmed but there was an error processing it. Please contact support.");
-            }
-            
-            // Remove listeners
-            try {
-              database.ref(`confirmedPayments/${paymentId}`).off('value');
-              database.ref(`canceledPayments/${paymentId}`).off('value');
-            } catch (e) {
-              console.log("Error removing listeners:", e);
-            }
-          }
-        } catch (e) {
-          console.error("Error in confirmation listener:", e);
-        }
-      };
-      
-      // Store reference to current listener
-      window.currentConfirmListener = {
-        path: `confirmedPayments/${paymentId}`,
-        handler: confirmHandler
-      };
-      
-      // Set up the listener with error handling
-      confirmedRef.on('value', confirmHandler, (error) => {
-        console.error("Confirmation listener error:", error);
-      });
-      
-      // Also set up cancellation listener with error handling
-      const canceledRef = database.ref(`canceledPayments/${paymentId}`);
-      canceledRef.on('value', (snapshot) => {
-        try {
-          if (snapshot.exists()) {
-            logDebug("Payment canceled: " + paymentId);
-            qrModal.style.display = 'none';
-            showStatusMessage('Payment was canceled', 'error');
-            payBtn.disabled = false;
-            payBtn.innerHTML = 'Pay Now';
-            currentPaymentId = null;
-            
-            // Clear check interval
-            if (confirmationInterval) {
-              clearInterval(confirmationInterval);
-              confirmationInterval = null;
-            }
-            
-            // Remove listeners
-            try {
-              database.ref(`confirmedPayments/${paymentId}`).off('value');
-              database.ref(`canceledPayments/${paymentId}`).off('value');
-            } catch (e) {
-              console.log("Error removing listeners:", e);
-            }
-          }
-        } catch (e) {
-          console.error("Error in cancellation listener:", e);
-        }
-      }, (error) => {
-        console.error("Cancellation listener error:", error);
-      });
-    }
-
-    // UPDATED Check for payment confirmation with periodic fallback
-    function startPaymentConfirmationCheck(paymentId) {
-      logDebug("Starting payment confirmation check for ID: " + paymentId);
-      
-      // Show waiting text in QR modal
-      qrWaitingText.style.display = 'block';
-      
-      // Store current payment ID
-      currentPaymentId = paymentId;
-      
-      // Set up robust listeners
-      setupRobustConfirmationListener(paymentId);
-      
-      // Clean up any existing interval
-      if (confirmationInterval) {
-        clearInterval(confirmationInterval);
-      }
-      
-      // Also periodically check if payment is confirmed (as backup)
-      let checkCount = 0;
-      confirmationInterval = setInterval(() => {
-        checkCount++;
-        logDebug(`Periodic check #${checkCount} for payment ${paymentId}`);
-        
-        // Only check up to 30 times (5 minutes)
-        if (checkCount > 30) {
-          clearInterval(confirmationInterval);
-          confirmationInterval = null;
-          return;
-        }
-        
-        // Check confirmation status manually
-        if (database) {
-          database.ref(`confirmedPayments/${paymentId}`).once('value')
-            .then(snapshot => {
-              if (snapshot.exists()) {
-                logDebug("Payment confirmed via periodic check");
-                clearInterval(confirmationInterval);
-                confirmationInterval = null;
-                handleSuccessfulPayment(null, selectedPaymentMethod, document.getElementById('totalAmount').textContent.replace('₹', ''));
-              }
-            })
-            .catch(err => {
-              console.error("Error in periodic check:", err);
-            });
-        }
-      }, 10000); // Check every 10 seconds
-    }
-    
-    // Cancel the current payment with better error handling
-    function cancelCurrentPayment() {
-      if (currentPaymentId) {
-        logDebug("Canceling current payment: " + currentPaymentId);
-        
-        // Remove the pending payment with retries
-        let retryCount = 0;
-        const attemptCancel = () => {
-          if (database) {
-            database.ref(`pendingPayments/${currentPaymentId}`).remove()
-              .then(() => {
-                logDebug('Payment request canceled successfully');
-                
-                // Clean up interval
-                if (confirmationInterval) {
-                  clearInterval(confirmationInterval);
-                  confirmationInterval = null;
-                }
-                
-                // Remove listeners
-                try {
-                  database.ref(`confirmedPayments/${currentPaymentId}`).off();
-                  database.ref(`canceledPayments/${currentPaymentId}`).off();
-                } catch (e) {
-                  console.log("Error removing listeners:", e);
-                }
-                
-                qrModal.style.display = 'none';
-                
-                showStatusMessage('Payment request canceled', 'info');
-                payBtn.disabled = false;
-                payBtn.innerHTML = 'Pay Now';
-                
-                currentPaymentId = null;
-              })
-              .catch(error => {
-                console.error('Error canceling payment:', error);
-                if (retryCount < 2) {
-                  retryCount++;
-                  logDebug(`Retrying cancel - attempt ${retryCount}`);
-                  setTimeout(attemptCancel, 1000);
-                } else {
-                  // Force cleanup anyway
-                  qrModal.style.display = 'none';
-                  payBtn.disabled = false;
-                  payBtn.innerHTML = 'Pay Now';
-                  currentPaymentId = null;
-                }
-              });
-          } else {
-            // Force cleanup anyway if no database
-            qrModal.style.display = 'none';
-            payBtn.disabled = false;
-            payBtn.innerHTML = 'Pay Now';
-            currentPaymentId = null;
-          }
-        };
-        
-        attemptCancel();
-      } else {
-        qrModal.style.display = 'none';
-      }
-    }
-    
-    // Remove payment listeners with better cleanup
-    function removePaymentListeners(paymentId) {
-      logDebug("Removing payment listeners for ID: " + paymentId);
-      
-      // Clean up interval if exists
-      if (confirmationInterval) {
-        clearInterval(confirmationInterval);
-        confirmationInterval = null;
-      }
-      
-      // Try to remove Firebase listeners
-      if (database) {
-        try {
-          database.ref(`confirmedPayments/${paymentId}`).off();
-          database.ref(`canceledPayments/${paymentId}`).off();
-        } catch (e) {
-          console.log("Error removing Firebase listeners:", e);
-        }
-      }
-      
-      window.currentConfirmListener = null;
-    }
-
-    // Add click event listeners to payment methods
-    document.querySelectorAll('.payment-method').forEach(method => {
-      method.onclick = function() {
-        // Remove selected class from all methods
-        document.querySelectorAll('.payment-method').forEach(m => {
-          m.classList.remove('selected');
-        });
-        
-        // Add selected class to this method
-        this.classList.add('selected');
-        
-        // Set the selected payment method
-        selectedPaymentMethod = this.getAttribute('data-method');
-        
-        // Enable the pay button if we have a camera stream
-        if ((stream && stream.active) || cameraOverlay.innerHTML.includes('Continuing without camera')) {
-          payBtn.disabled = false;
-          payBtn.classList.remove('btn-disabled');
-        }
-        
-        showStatusMessage(`Selected payment method: ${selectedPaymentMethod}`, 'info');
-      };
-    });
-    
-    // Show QR modal and generate QR code
-    function showQrModal() {
-      const amount = document.getElementById('totalAmount').textContent.replace('₹', '');
-      qrAmountDisplay.textContent = amount;
-      
-      // Generate and display QR code
-      generateUpiQrCode(amount);
-      
-      // Show modal
-      qrModal.style.display = 'flex';
-      
-      // Check database connection
-      if (database) {
-        database.ref(".info/connected").once("value", function(snap) {
-          if (snap.val() === true) {
-            logDebug("Firebase connected, proceeding with payment alert");
-          } else {
-            logDebug("Firebase not connected, showing error");
-            showStatusMessage('Not connected to payment system', 'error');
-          }
-        });
-      } else {
-        logDebug("Database not initialized, cannot send payment alert");
-        showStatusMessage('Payment system not connected', 'error');
-        return;
-      }
-      
-      // Send payment alert to remote devices
-      logDebug("Sending payment alert...");
-      sendPaymentAlert('upi', amount)
-        .then(paymentId => {
-          if (paymentId) {
-            // Switch to waiting mode
-            qrWaitingText.style.display = 'block';
-            
-            // Start waiting for confirmation
-            startPaymentConfirmationCheck(paymentId);
-          } else {
-            showStatusMessage('Could not connect to payment system. Please try again.', 'error');
-          }
-        })
-        .catch(err => {
-          console.error("Error in payment alert process:", err);
-          showStatusMessage('Payment system error. Please try again or use cash.', 'error');
-        });
-    }
-    
-    // Handle UPI payment cancellation
-    qrCloseBtn.addEventListener('click', function() {
-      logDebug("UPI payment canceled by user");
-      // Hide modal
-      qrModal.style.display = 'none';
-      
-      // If there's an active payment request, cancel it
-      if (currentPaymentId) {
-        cancelCurrentPayment();
-      }
-    });
-
-    // Handle payment - Show QR code for UPI or process cash payment
+    // Handle payment initiation
     payBtn.addEventListener('click', async () => {
-      // Check if camera is needed (only skip for cash)
-      if ((!stream || !stream.active) && selectedPaymentMethod === 'upi' && 
-          !cameraOverlay.innerHTML.includes('Continuing without camera')) {
-        showStatusMessage('Please enable your camera or select cash payment.', 'error');
-        return;
-      }
-      
       if (!selectedPaymentMethod) {
         showStatusMessage('Please select a payment method first.', 'error');
         return;
@@ -1723,33 +1353,458 @@
       
       // Handle based on payment method
       if (selectedPaymentMethod === 'upi') {
-        logDebug("UPI payment selected - showing QR code");
-        // Show UPI QR code modal
-        showQrModal();
+        log("UPI payment selected - showing QR code");
+        
+        // Get amount
+        const amount = document.getElementById('totalAmount').textContent.replace('₹', '');
+        
+        // Show QR code modal
+        const qrModal = document.getElementById('qrModal');
+        qrModal.style.display = 'flex';
+        
+        // Generate QR code
+        generateUpiQrCode(amount);
+        
+        // Create payment in Firebase
+        if (firebaseInitialized && database) {
+          try {
+            // Create payment data
+            const consoleName = document.getElementById('selectedConsole').textContent;
+            const durationText = document.getElementById('selectedDuration').textContent;
+            const players = document.getElementById('selectedPlayers').textContent.split(' ')[0];
+            
+            // Extract minutes from duration text
+            let minutes;
+            if (durationText.includes('min')) {
+              minutes = parseInt(durationText.match(/\d+/)[0]);
+            } else if (durationText.includes('hour')) {
+              if (durationText.includes('1.5')) {
+                minutes = 90;
+              } else {
+                minutes = parseInt(durationText.match(/\d+/)[0]) * 60;
+              }
+            }
+            
+            const paymentId = `payment-${Date.now()}`;
+            const paymentData = {
+              id: paymentId,
+              console: consoleName,
+              minutes: minutes,
+              method: 'upi',
+              players: parseInt(players),
+              amount: parseInt(amount),
+              createdAt: new Date().toISOString(),
+              status: 'pending'
+            };
+            
+            // Send to Firebase
+            await database.ref(`pendingPayments/${paymentId}`).set(paymentData);
+            log("Payment request sent to Firebase: " + paymentId, "success");
+            
+            // Show waiting status
+            document.getElementById('qrWaitingText').style.display = 'block';
+            
+            // Set up listener for confirmation
+            setupPaymentListener(paymentId);
+          } catch (error) {
+            log("Error creating payment: " + error.message, "error");
+            showStatusMessage("Error creating payment. Try again.", "error");
+          }
+        } else {
+          log("Firebase not connected, cannot create payment", "error");
+          showStatusMessage("Not connected to payment system", "error");
+        }
       } else {
-        // Handle cash payment
-        logDebug("Cash payment selected - processing directly");
+        // Handle cash payment - simple direct processing
+        log("Cash payment selected - processing directly");
+        
         // Disable button and show loading state
         payBtn.disabled = true;
         payBtn.innerHTML = 'Processing <div class="loading-spinner"></div>';
         
-        try {
-          // Get payment details
-          const consoleName = document.getElementById('selectedConsole').textContent;
-          const durationText = document.getElementById('selectedDuration').textContent;
-          
-          // Extract number from duration text
-          let durationMin;
-          if (durationText.includes('min')) {
-            durationMin = parseInt(durationText.match(/\d+/)[0]);
-          } else if (durationText.includes('hour')) {
-            if (durationText.includes('1.5')) {
-              durationMin = 90;
-            } else {
-              durationMin = parseInt(durationText.match(/\d+/)[0]) * 60;
-            }
+        // Get payment details
+        const consoleName = document.getElementById('selectedConsole').textContent;
+        const durationText = document.getElementById('selectedDuration').textContent;
+        const amount = document.getElementById('totalAmount').textContent.replace('₹', '');
+        
+        // Extract duration in minutes
+        let durationMin = 60;
+        if (durationText.includes('min')) {
+          durationMin = parseInt(durationText.match(/\d+/)[0]);
+        } else if (durationText.includes('hour')) {
+          if (durationText.includes('1.5')) {
+            durationMin = 90;
           } else {
-            throw new Error('Could not determine duration');
+            durationMin = parseInt(durationText.match(/\d+/)[0]) * 60;
+          }
+        }
+        
+        // Create booking object
+        const endTime = Date.now() + (durationMin * 60 * 1000);
+        const players = document.getElementById('selectedPlayers').textContent.split(' ')[0];
+        
+        const booking = {
+          console: consoleName,
+          endTime: endTime,
+          minutes: durationMin,
+          method: 'cash',
+          players: parseInt(players),
+          amount: amount
+        };
+        
+        // Capture photo if possible
+        const photoDataUrl = capturePhoto();
+        if (photoDataUrl) {
+          // Store the photo locally
+          try {
+            const photosJSON = localStorage.getItem('userPhotos') || '{}';
+            const photos = JSON.parse(photosJSON);
+            photos[`${consoleName}-${endTime}`] = photoDataUrl;
+            localStorage.setItem('userPhotos', JSON.stringify(photos));
+          } catch (e) {
+            log("Error storing photo: " + e.message, "error");
+          }
+        }
+        
+        // Store booking in localStorage
+        try {
+          // Also store directly in consoleBookings
+          const bookingsJSON = localStorage.getItem('consoleBookings') || '[]';
+          let bookings = JSON.parse(bookingsJSON);
+          
+          // Remove any existing booking for this console
+          bookings = bookings.filter(b => b.console !== consoleName);
+          
+          // Add the new booking
+          bookings.push(booking);
+          
+          // Save updated bookings
+          localStorage.setItem('consoleBookings', JSON.stringify(bookings));
+          localStorage.setItem('newBooking', JSON.stringify(booking));
+          
+          log("Booking saved successfully", "success");
+          showStatusMessage("Payment successful! Redirecting...", "success");
+          
+          // Stop camera stream
+          if (stream) {
+            stream.getTracks().forEach(track => track.stop());
           }
           
-          const amount = document.getElementById('totalAmount').textContent.
+          // Redirect after delay
+          setTimeout(() => {
+            window.location.href = 'index.html';
+          }, 1500);
+        } catch (error) {
+          log("Error saving booking: " + error.message, "error");
+          showStatusMessage("Error saving booking. Please try again.", "error");
+          
+          // Reset button state
+          payBtn.disabled = false;
+          payBtn.innerHTML = 'Pay Now';
+        }
+      }
+    });
+
+    // Set up payment confirmation listener
+    function setupPaymentListener(paymentId) {
+      if (!firebaseInitialized || !database) {
+        log("Cannot setup payment listener - Firebase not initialized", "error");
+        return;
+      }
+      
+      log("Setting up payment listener for ID: " + paymentId);
+      currentPaymentId = paymentId;
+      
+      // Listen for confirmation
+      const confirmedRef = database.ref(`confirmedPayments/${paymentId}`);
+      confirmedRef.on('value', snapshot => {
+        try {
+          if (snapshot.exists()) {
+            log("Payment confirmed: " + paymentId, "success");
+            
+            // Process successful payment
+            processSuccessfulPayment();
+          }
+        } catch (e) {
+          log("Error in confirmation listener: " + e.message, "error");
+        }
+      });
+      
+      // Listen for cancellation
+      const canceledRef = database.ref(`canceledPayments/${paymentId}`);
+      canceledRef.on('value', snapshot => {
+        try {
+          if (snapshot.exists()) {
+            log("Payment canceled: " + paymentId, "info");
+            
+            // Hide QR modal
+            document.getElementById('qrModal').style.display = 'none';
+            
+            // Show message
+            showStatusMessage("Payment was canceled", "info");
+            
+            // Reset button
+            payBtn.disabled = false;
+            payBtn.innerHTML = 'Pay Now';
+            
+            // Clear payment ID
+            currentPaymentId = null;
+          }
+        } catch (e) {
+          log("Error in cancellation listener: " + e.message, "error");
+        }
+      });
+      
+      // Also do periodic checks as fallback
+      const checkInterval = setInterval(() => {
+        if (!currentPaymentId) {
+          clearInterval(checkInterval);
+          return;
+        }
+        
+        log("Periodic check for payment: " + paymentId);
+        
+        // Check confirmation status
+        database.ref(`confirmedPayments/${paymentId}`).once('value')
+          .then(snapshot => {
+            if (snapshot.exists()) {
+              log("Payment confirmed via periodic check", "success");
+              clearInterval(checkInterval);
+              processSuccessfulPayment();
+            }
+          })
+          .catch(err => {
+            log("Error in periodic check: " + err.message, "error");
+          });
+      }, 10000); // Every 10 seconds
+    }
+    
+    // Process successful payment
+    function processSuccessfulPayment() {
+      try {
+        // Hide QR modal
+        document.getElementById('qrModal').style.display = 'none';
+        
+        // Get payment details
+        const consoleName = document.getElementById('selectedConsole').textContent;
+        const durationText = document.getElementById('selectedDuration').textContent;
+        const amount = document.getElementById('totalAmount').textContent.replace('₹', '');
+        
+        // Extract duration in minutes
+        let durationMin = 60;
+        if (durationText.includes('min')) {
+          durationMin = parseInt(durationText.match(/\d+/)[0]);
+        } else if (durationText.includes('hour')) {
+          if (durationText.includes('1.5')) {
+            durationMin = 90;
+          } else {
+            durationMin = parseInt(durationText.match(/\d+/)[0]) * 60;
+          }
+        }
+        
+        // Create booking object
+        const endTime = Date.now() + (durationMin * 60 * 1000);
+        const players = document.getElementById('selectedPlayers').textContent.split(' ')[0];
+        
+        const booking = {
+          console: consoleName,
+          endTime: endTime,
+          minutes: durationMin,
+          method: 'upi',
+          players: parseInt(players),
+          amount: amount
+        };
+        
+        // Capture photo if possible
+        const photoDataUrl = capturePhoto();
+        if (photoDataUrl) {
+          // Store the photo locally
+          try {
+            const photosJSON = localStorage.getItem('userPhotos') || '{}';
+            const photos = JSON.parse(photosJSON);
+            photos[`${consoleName}-${endTime}`] = photoDataUrl;
+            localStorage.setItem('userPhotos', JSON.stringify(photos));
+          } catch (e) {
+            log("Error storing photo: " + e.message, "error");
+          }
+        }
+        
+        // Store booking in localStorage
+        try {
+          // Also store directly in consoleBookings
+          const bookingsJSON = localStorage.getItem('consoleBookings') || '[]';
+          let bookings = JSON.parse(bookingsJSON);
+          
+          // Remove any existing booking for this console
+          bookings = bookings.filter(b => b.console !== consoleName);
+          
+          // Add the new booking
+          bookings.push(booking);
+          
+          // Save updated bookings
+          localStorage.setItem('consoleBookings', JSON.stringify(bookings));
+          localStorage.setItem('newBooking', JSON.stringify(booking));
+          
+          log("Booking saved successfully", "success");
+          showStatusMessage("Payment successful! Redirecting...", "success");
+          
+          // Stop camera stream
+          if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+          }
+          
+          // Redirect after delay
+          setTimeout(() => {
+            window.location.href = 'index.html';
+          }, 1500);
+        } catch (error) {
+          log("Error saving booking: " + error.message, "error");
+          showStatusMessage("Error saving booking. Please try again.", "error");
+        }
+      } catch (error) {
+        log("Error processing payment: " + error.message, "error");
+        showStatusMessage("Error processing payment. Please try again.", "error");
+      }
+    }
+    
+    // Handle cancel button in QR modal
+    document.getElementById('qrCloseBtn').addEventListener('click', () => {
+      const qrModal = document.getElementById('qrModal');
+      qrModal.style.display = 'none';
+      
+      // If there's an active payment, cancel it
+      if (currentPaymentId && firebaseInitialized && database) {
+        log("Canceling payment: " + currentPaymentId);
+        
+        // Remove from pendingPayments
+        database.ref(`pendingPayments/${currentPaymentId}`).remove()
+          .then(() => {
+            log("Payment request canceled successfully");
+            currentPaymentId = null;
+          })
+          .catch(error => {
+            log("Error canceling payment: " + error.message, "error");
+          });
+      }
+    });
+    
+    // Handle back button
+    backBtn.addEventListener('click', () => {
+      // Stop camera stream if active
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+      
+      // Navigate back
+      window.location.href = 'duration.html';
+    });
+    
+    // Test alert button
+    document.getElementById('testAlertBtn').addEventListener('click', () => {
+      if (!firebaseInitialized || !database) {
+        showStatusMessage("Firebase not initialized. Cannot send test alert.", "error");
+        return;
+      }
+      
+      const testId = 'test-' + Date.now();
+      const testData = {
+        id: testId,
+        console: 'TEST PS5',
+        minutes: 30,
+        method: 'upi',
+        players: 1,
+        amount: 100,
+        createdAt: new Date().toISOString(),
+        status: 'pending'
+      };
+      
+      log("Sending test payment: " + testId);
+      
+      database.ref(`pendingPayments/${testId}`).set(testData)
+        .then(() => {
+          log("Test payment sent successfully", "success");
+          showStatusMessage("Test payment sent!", "success");
+        })
+        .catch(error => {
+          log("Error sending test payment: " + error.message, "error");
+          showStatusMessage("Error sending test payment", "error");
+        });
+    });
+    
+    // Clear DB button
+    document.getElementById('clearDbBtn').addEventListener('click', () => {
+      if (!firebaseInitialized || !database) {
+        showStatusMessage("Firebase not initialized. Cannot clear DB.", "error");
+        return;
+      }
+      
+      if (confirm("Clear all pending payments?")) {
+        database.ref("pendingPayments").remove()
+          .then(() => {
+            log("Pending payments cleared successfully", "success");
+            showStatusMessage("Pending payments cleared", "success");
+          })
+          .catch(error => {
+            log("Error clearing payments: " + error.message, "error");
+            showStatusMessage("Error clearing payments", "error");
+          });
+      }
+    });
+    
+    // Restart camera button
+    document.getElementById('restartCameraBtn').addEventListener('click', () => {
+      // Stop current stream if it exists
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+        stream = null;
+      }
+      
+      // Clear video source
+      cameraFeed.srcObject = null;
+      
+      // Reset initialized flag
+      cameraInitialized = false;
+      
+      // Try to initialize again
+      setTimeout(initCamera, 500);
+    });
+    
+    // Restart Firebase button
+    document.getElementById('restartFirebaseBtn').addEventListener('click', () => {
+      log("Manually restarting Firebase connection");
+      
+      // If already initialized, try to go online
+      if (firebaseInitialized && database) {
+        try {
+          database.goOnline();
+          connectionIndicator.className = "connection-indicator reconnecting";
+          connectionStatus.textContent = "Reconnecting...";
+          log("Forced Firebase reconnection", "info");
+        } catch (e) {
+          log("Error forcing reconnection: " + e.message, "error");
+        }
+      } else {
+        // Try to initialize from scratch
+        initFirebase();
+      }
+    });
+    
+    // Initialize on page load
+    window.onload = function() {
+      log("Page loaded - 2025-08-06 12:05:29", "info");
+      
+      // Load payment details
+      initPaymentDetails();
+      
+      // Initialize Firebase
+      setTimeout(initFirebase, 500);
+      
+      // Initialize camera after a short delay
+      setTimeout(initCamera, 1000);
+      
+      // Show instructions
+      showStatusMessage("Select a payment method when ready", "info");
+    };
+  </script>
+</body>
+</html>
