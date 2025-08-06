@@ -707,6 +707,17 @@
       cursor: pointer;
       font-size: 10px;
     }
+
+    /* Skip camera button */
+    .skip-camera-btn {
+      background: #555;
+      color: white;
+      border: none;
+      padding: 8px 15px;
+      border-radius: 5px;
+      margin-top: 10px;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
@@ -789,6 +800,7 @@
         <div class="camera-overlay" id="cameraOverlay">
           <div class="camera-message">
             Camera activating... <div class="loading-spinner" style="display: inline-block;"></div>
+            <button class="skip-camera-btn" id="skipCameraBtn">Skip Camera</button>
           </div>
         </div>
       </div>
@@ -799,8 +811,8 @@
   <div id="qrModal" class="qr-modal">
     <div class="qr-container">
       <div class="qr-header">
-        <div class="qr-title">Paytm Payment</div>
-        <div class="qr-subtitle">Scan with Paytm app to pay</div>
+        <div class="qr-title">UPI Payment</div>
+        <div class="qr-subtitle">Scan with any UPI app to pay</div>
       </div>
       
       <div class="qr-code-box">
@@ -809,17 +821,17 @@
           <div class="qr-loading-spinner"></div>
         </div>
         <div class="qr-fallback" id="qrFallback">
-          Unable to load QR code. Please use Paytm app to make payment.
+          Unable to load QR code. Please use any UPI app to make payment.
         </div>
       </div>
       
       <div class="qr-details">
         <div class="qr-amount">₹<span id="qrAmountDisplay">130</span></div>
         <div class="qr-instructions">
-          1. Open your Paytm app<br>
+          1. Open any UPI app (GPay, PhonePe, Paytm, etc.)<br>
           2. Scan this QR code<br>
           3. Enter the amount shown above<br>
-          4. Complete payment in your Paytm app and wait
+          4. Complete payment in your UPI app and wait
         </div>
       </div>
       
@@ -853,7 +865,7 @@
     <button id="testAlertBtn" class="debug-btn">Test Alert</button>
     <button id="checkDbBtn" class="debug-btn">Check DB</button>
     <button id="clearDbBtn" class="debug-btn">Clear DB</button>
-    <button id="simulatePaytm" class="debug-btn">Simulate Paytm</button>
+    <button id="simulateSound" class="debug-btn">Simulate Paytm</button>
   </div>
 
   <script>
@@ -861,7 +873,7 @@
     const firebaseConfig = {
       apiKey: "AIzaSyDUIUj6uvUfWVxyHfgLWzahJAelrFqpIEc",
       authDomain: "gamespotkiosk.firebaseapp.com",
-      databaseURL: "https://gamespotkiosk-default-rtdb.asia-southeast1.firebasedatabase.app", // FIXED URL FOR ASIA REGION
+      databaseURL: "https://gamespotkiosk-default-rtdb.asia-southeast1.firebasedatabase.app", 
       projectId: "gamespotkiosk",
       storageBucket: "gamespotkiosk.appspot.com",
       messagingSenderId: "537976874541",
@@ -892,10 +904,10 @@
     // Global variables
     let stream = null;
     let selectedPaymentMethod = null;
-    // Not displaying UPI ID on the page as requested
-    const upiId = "paytm.s15qoa1@pty"; 
+    const upiId = "paytm.s15qoa1@pty"; // This won't be displayed on the screen
     let currentPaymentId = null;
     let paymentListeners = {};
+    let cameraInitialized = false;
     
     // DOM elements
     const cameraFeed = document.getElementById('cameraFeed');
@@ -905,6 +917,7 @@
     const backBtn = document.getElementById('backBtn');
     const statusMessage = document.getElementById('statusMessage');
     const paymentMethods = document.querySelectorAll('.payment-method');
+    const skipCameraBtn = document.getElementById('skipCameraBtn');
     
     // QR Modal elements
     const qrModal = document.getElementById('qrModal');
@@ -915,21 +928,16 @@
     const qrCloseBtn = document.getElementById('qrCloseBtn');
     const qrWaitingText = document.getElementById('qrWaitingText');
     
-    // Waiting overlay elements
-    const waitingOverlay = document.getElementById('waitingOverlay');
-    const waitingCancelBtn = document.getElementById('waitingCancelBtn');
-    
-    // Preloaded QR element
-    const preloadedQR = document.getElementById('preloadedQR');
-    
     // Debug elements
     const testAlertBtn = document.getElementById('testAlertBtn');
     const checkDbBtn = document.getElementById('checkDbBtn');
     const clearDbBtn = document.getElementById('clearDbBtn');
-    const simulatePaytmBtn = document.getElementById('simulatePaytm');
+    const simulateSound = document.getElementById('simulateSound');
 
     // Initialize payment details from local storage
     function initPaymentDetails() {
+      console.log("Initializing payment details from localStorage");
+      
       // Get console information
       const consoleName = localStorage.getItem('selectedConsole') || 'PS5';
       
@@ -944,9 +952,9 @@
       } else if (durationMin === 60) {
         durationDisplay = "1 hour";
       } else if (durationMin === 90) {
-        durationDisplay = "1.5 hour";
+        durationDisplay = "1.5 hours";
       } else if (durationMin === 120) {
-        durationDisplay = "2 hour";
+        durationDisplay = "2 hours";
       } else {
         durationDisplay = `${durationMin} minutes`;
       }
@@ -956,6 +964,13 @@
       
       // Get total price
       const totalPrice = localStorage.getItem('totalPrice') || '130';
+      
+      console.log("Retrieved details:", {
+        console: consoleName,
+        duration: durationDisplay,
+        players: players,
+        price: totalPrice
+      });
 
       // Update UI
       document.getElementById('selectedConsole').textContent = consoleName;
@@ -977,10 +992,47 @@
       // Set the src to preload
       preloadedQR.src = googleChartUrl;
     }
+    
+    // Skip camera function
+    skipCameraBtn.addEventListener('click', function() {
+      cameraOverlay.innerHTML = `
+        <div class="camera-message">
+          Continuing without camera
+        </div>
+      `;
+      
+      // Enable payment buttons
+      document.querySelectorAll('.payment-method').forEach(method => {
+        method.onclick = function() {
+          // Remove selected class from all methods
+          document.querySelectorAll('.payment-method').forEach(m => {
+            m.classList.remove('selected');
+          });
+          
+          // Add selected class to this method
+          this.classList.add('selected');
+          
+          // Set the selected payment method
+          selectedPaymentMethod = this.getAttribute('data-method');
+          
+          // Enable the pay button regardless of camera
+          payBtn.disabled = false;
+          payBtn.classList.remove('btn-disabled');
+          
+          showStatusMessage(`Selected payment method: ${selectedPaymentMethod}`, 'info');
+        };
+      });
+      
+      showStatusMessage('Camera skipped. You can now select a payment method.', 'info');
+    });
 
     // Auto-initialize camera as soon as the page loads
     async function initCamera() {
+      if (cameraInitialized) return;
+      
       try {
+        console.log("Requesting camera access...");
+        
         stream = await navigator.mediaDevices.getUserMedia({ 
           video: { 
             width: { ideal: 1280 },
@@ -990,23 +1042,87 @@
         });
         
         cameraFeed.srcObject = stream;
-        cameraOverlay.style.display = 'none';
-        
-        showStatusMessage('Camera activated. Select payment method to continue.', 'info');
+        cameraFeed.onloadedmetadata = function() {
+          cameraOverlay.style.display = 'none';
+          cameraInitialized = true;
+          console.log("Camera activated successfully");
+          
+          // Add click events to payment methods
+          document.querySelectorAll('.payment-method').forEach(method => {
+            method.onclick = function() {
+              // Remove selected class from all methods
+              document.querySelectorAll('.payment-method').forEach(m => {
+                m.classList.remove('selected');
+              });
+              
+              // Add selected class to this method
+              this.classList.add('selected');
+              
+              // Set the selected payment method
+              selectedPaymentMethod = this.getAttribute('data-method');
+              
+              // Enable the pay button
+              payBtn.disabled = false;
+              payBtn.classList.remove('btn-disabled');
+              
+              showStatusMessage(`Selected payment method: ${selectedPaymentMethod}`, 'info');
+            };
+          });
+          
+          showStatusMessage('Camera activated. Select payment method to continue.', 'info');
+        };
       } catch (err) {
         console.error('Camera error:', err);
         cameraOverlay.innerHTML = `
           <div class="camera-message">
-            Camera error: ${err.message}<br>Please allow camera access to continue.
+            Camera error: ${err.message}<br>Please allow camera access or click skip.
+            <button class="skip-camera-btn" id="skipCameraRetryBtn">Skip Camera</button>
           </div>
         `;
-        showStatusMessage(`Camera error: ${err.message}. Please allow camera access.`, 'error');
+        
+        document.getElementById('skipCameraRetryBtn').addEventListener('click', function() {
+          cameraOverlay.innerHTML = `
+            <div class="camera-message">
+              Continuing without camera
+            </div>
+          `;
+          
+          // Enable payment buttons even without camera
+          document.querySelectorAll('.payment-method').forEach(method => {
+            method.onclick = function() {
+              // Remove selected class from all methods
+              document.querySelectorAll('.payment-method').forEach(m => {
+                m.classList.remove('selected');
+              });
+              
+              // Add selected class to this method
+              this.classList.add('selected');
+              
+              // Set the selected payment method
+              selectedPaymentMethod = this.getAttribute('data-method');
+              
+              // Enable the pay button
+              payBtn.disabled = false;
+              payBtn.classList.remove('btn-disabled');
+              
+              showStatusMessage(`Selected payment method: ${selectedPaymentMethod}`, 'info');
+            };
+          });
+          
+          showStatusMessage('Camera skipped. You can now select a payment method.', 'info');
+        });
+        
+        showStatusMessage(`Camera error: ${err.message}. You can skip the camera.`, 'error');
       }
     }
 
     // Improved capturePhoto function that actually returns the photo data
     function capturePhoto() {
       try {
+        if (!stream || !stream.active) {
+          return null; // Camera not available
+        }
+        
         const context = canvas.getContext('2d');
         
         // Make sure the video is ready
@@ -1122,18 +1238,6 @@
         
         console.log("Payment data prepared:", paymentData);
         
-        // Test if we can write to the database
-        try {
-          const testRef = await database.ref("test-write").set({
-            timestamp: Date.now(),
-            status: "testing"
-          });
-          console.log("Test write successful");
-        } catch (testError) {
-          console.error("Test write failed:", testError);
-          throw new Error("Database write permissions test failed");
-        }
-        
         // Send to Firebase with proper promise handling
         try {
           await database.ref(`pendingPayments/${paymentId}`).set(paymentData);
@@ -1239,30 +1343,6 @@
       paymentListeners = {};
     }
 
-    // Add click event listeners to payment methods
-    document.querySelectorAll('.payment-method').forEach(method => {
-      method.onclick = function() {
-        // Remove selected class from all methods
-        document.querySelectorAll('.payment-method').forEach(m => {
-          m.classList.remove('selected');
-        });
-        
-        // Add selected class to this method
-        this.classList.add('selected');
-        
-        // Set the selected payment method
-        selectedPaymentMethod = this.getAttribute('data-method');
-        
-        // Enable the pay button if we have a camera stream
-        if (stream && stream.active) {
-          payBtn.disabled = false;
-          payBtn.classList.remove('btn-disabled');
-        }
-        
-        showStatusMessage(`Selected payment method: ${selectedPaymentMethod}`, 'info');
-      };
-    });
-    
     // Show QR modal and generate QR code
     function showQrModal() {
       const amount = document.getElementById('totalAmount').textContent.replace('₹', '');
@@ -1274,36 +1354,6 @@
       // Show modal
       qrModal.style.display = 'flex';
       
-      // Capture photo for verification
-      const photoDataUrl = capturePhoto();
-      if (!photoDataUrl) {
-        showStatusMessage('Failed to capture verification photo. Please try again.', 'error');
-        return;
-      }
-      
-      // Check database connection
-      database.ref(".info/connected").once("value", function(snap) {
-        if (snap.val() === true) {
-          console.log("Connected to Firebase");
-        } else {
-          console.log("Not connected to Firebase");
-          showStatusMessage('Not connected to payment system', 'error');
-        }
-      });
-      
-      // Log current pending payments
-      console.log("Checking current pending payments...");
-      database.ref("pendingPayments").once("value", function(snapshot) {
-        const pendingData = snapshot.val();
-        console.log("Current pendingPayments:", pendingData);
-        
-        if (pendingData) {
-          console.log("Number of pending payments:", Object.keys(pendingData).length);
-        } else {
-          console.log("No pending payments found");
-        }
-      });
-      
       // Send payment alert to remote devices
       console.log("Sending payment alert...");
       sendPaymentAlert('upi', amount)
@@ -1311,11 +1361,6 @@
           if (paymentId) {
             // Switch to waiting mode
             qrWaitingText.style.display = 'block';
-            
-            // Verify payment was stored
-            database.ref(`pendingPayments/${paymentId}`).once("value", function(snap) {
-              console.log("Verification of saved payment:", snap.val());
-            });
             
             // Start waiting for confirmation
             startPaymentConfirmationCheck(paymentId);
@@ -1351,11 +1396,6 @@
 
     // Handle payment - Show QR code for UPI or process cash payment
     payBtn.addEventListener('click', async () => {
-      if (!stream || !stream.active) {
-        showStatusMessage('Please enable your camera first.', 'error');
-        return;
-      }
-      
       if (!selectedPaymentMethod) {
         showStatusMessage('Please select a payment method first.', 'error');
         return;
@@ -1394,7 +1434,7 @@
           
           const amount = document.getElementById('totalAmount').textContent.replace('₹', '');
           
-          // Capture the photo for storage
+          // Capture the photo for storage if camera is available
           const photoDataUrl = capturePhoto();
           
           console.log('Processing cash payment:', {
@@ -1421,38 +1461,6 @@
         }
       }
     });
-
-    // Function to send power command to ESP32
-    async function sendPowerCommand(consoleName, action) {
-      try {
-        showStatusMessage(`Sending ${action} command to ${consoleName}...`, 'info');
-        
-        const response = await fetch('/api/power-control', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            console: consoleName,
-            action: action
-          })
-        });
-        
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Unknown error');
-        }
-        
-        const result = await response.json();
-        console.log(`Power ${action} result:`, result);
-        showStatusMessage(`${consoleName} ${action === 'on' ? 'powered on' : 'powered off'} successfully`, 'success');
-        return true;
-      } catch (error) {
-        console.error(`Error sending power ${action} command to ${consoleName}:`, error);
-        showStatusMessage(`Note: Device power control failed, but booking will continue.`, 'info');
-        return false;
-      }
-    }
 
     // Handle successful payment completion
     async function handleSuccessfulPayment(response, method, amount) {
@@ -1505,49 +1513,6 @@
         photos[bookingId] = photoDataUrl;
         localStorage.setItem('userPhotos', JSON.stringify(photos));
         
-        // Send power ON command to PS5 if applicable
-        let powerCommandSent = false;
-        if (consoleName.includes('PS5')) {
-          try {
-            powerCommandSent = await sendPowerCommand(consoleName, 'on');
-          } catch (powerErr) {
-            console.error(`Error sending power ON command to ${consoleName}:`, powerErr);
-          }
-        }
-        
-        // Send payment and photo data to backend API
-        try {
-          console.log("Sending payment data to server...");
-          showStatusMessage("Sending payment data to server...", "info");
-          
-          // Send payment and photo data to backend API
-          const apiResponse = await fetch('/api/pay', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              console: consoleName,
-              minutes: durationMin,
-              method: method,
-              photoData: photoDataUrl // Include the photo data in the API request
-            })
-          });
-          
-          if (!apiResponse.ok) {
-            const errorData = await apiResponse.json();
-            throw new Error(`Server error: ${errorData.error || 'Unknown error'}`);
-          }
-          
-          const result = await apiResponse.json();
-          console.log("Server payment response:", result);
-          showStatusMessage("Payment successfully recorded on server", "success");
-          
-        } catch (apiErr) {
-          console.error("API payment error:", apiErr);
-          showStatusMessage(`Server payment processing warning: ${apiErr.message}. Local booking will still work.`, "info");
-        }
-        
         // Store booking in the new multi-booking format
         const newBooking = {
           console: consoleName,
@@ -1576,11 +1541,7 @@
         localStorage.setItem('consoleBookings', JSON.stringify(bookings));
         
         // Show success message
-        if (powerCommandSent) {
-          showStatusMessage('Payment successful! Your device is now powered on. Redirecting...', 'success');
-        } else {
-          showStatusMessage('Payment successful! Redirecting to main screen...', 'success');
-        }
+        showStatusMessage('Payment successful! Redirecting to main screen...', 'success');
         
         // Stop camera stream
         if (stream) {
@@ -1640,23 +1601,6 @@
       }, 5000);
     }
     
-    // Listen for admin commands (like redirect)
-    function listenForAdminCommands() {
-      const commandsRef = database.ref('commands');
-      commandsRef.limitToLast(1).on('child_added', snapshot => {
-        const command = snapshot.val();
-        
-        if (command && Date.now() - command.timestamp < 60000) { // Only process commands from the last minute
-          console.log('Received admin command:', command);
-          
-          if (command.type === 'redirect' && command.page) {
-            // Redirect to the specified page
-            window.location.href = command.page;
-          }
-        }
-      });
-    }
-    
     // Debug functions
     testAlertBtn.addEventListener('click', function() {
       const testId = 'test-' + Date.now();
@@ -1700,58 +1644,47 @@
       }
     });
     
-    // Simulate Paytm sound detection for testing
-    simulatePaytmBtn.addEventListener('click', function() {
+    // Simulate Paytm sound detection
+    simulateSound.addEventListener('click', function() {
       if (currentPaymentId) {
-        const confirmationData = {
-          id: currentPaymentId,
-          confirmedAt: new Date().toISOString(),
-          confirmedBy: "Simulator"
-        };
+        console.log("Simulating Paytm sound detection for payment:", currentPaymentId);
         
-        // Copy the pending payment data
+        // Get current payment data
         database.ref(`pendingPayments/${currentPaymentId}`).once('value')
           .then(snapshot => {
             if (snapshot.exists()) {
-              // Get the data
-              const pendingData = snapshot.val();
+              const paymentData = snapshot.val();
               
-              // Add confirmation info
-              const fullData = {
-                ...pendingData,
-                ...confirmationData
-              };
+              // Add confirmation timestamp
+              paymentData.confirmedAt = new Date().toISOString();
+              paymentData.confirmedBy = 'ESP32-AutoConfirm';
               
-              // Move to confirmed
-              return database.ref(`confirmedPayments/${currentPaymentId}`).set(fullData);
-            } else {
-              throw new Error("Pending payment not found");
+              // Create in confirmed payments
+              return database.ref(`confirmedPayments/${currentPaymentId}`).set(paymentData);
             }
           })
           .then(() => {
-            console.log("Payment confirmation simulated");
-            showStatusMessage("Payment confirmation simulated", "success");
+            console.log("Payment confirmed via simulation");
+            // The listener will handle the UI update
           })
           .catch(err => {
-            console.error("Simulation error:", err);
-            showStatusMessage(`Simulation error: ${err.message}`, "error");
+            console.error("Error simulating confirmation:", err);
+            alert("Simulation error: " + err.message);
           });
       } else {
-        alert("No active payment to simulate confirmation for");
+        alert("No active payment to confirm");
       }
     });
 
     // Initialize page
-    function init() {
+    window.onload = function() {
+      console.log("Page loaded - initializing...");
+      // First initialize payment details to ensure they show correctly
       initPaymentDetails();
-      initCamera();
-      listenForAdminCommands();
       
-      // Check database connection
-      database.ref(".info/connected").once("value", snap => {
-        console.log("Firebase connection status:", snap.val() ? "Connected" : "Disconnected");
-      });
-    }
-
-    // Start initialization when page loads
-    window.on
+      // Then initialize camera
+      setTimeout(initCamera, 500);
+    };
+  </script>
+</body>
+</html>
