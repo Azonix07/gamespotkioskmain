@@ -720,6 +720,50 @@
       cursor: pointer;
       font-size: 10px;
     }
+
+    /* Connection status indicator */
+    .connection-status {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      font-size: 12px;
+      padding: 5px 10px;
+      border-radius: 3px;
+      background-color: rgba(0,0,0,0.7);
+      color: white;
+      display: flex;
+      align-items: center;
+      z-index: 9999;
+    }
+
+    .connection-indicator {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-right: 5px;
+    }
+
+    .connected {
+      background-color: #4CAF50;
+      box-shadow: 0 0 5px #4CAF50;
+    }
+
+    .disconnected {
+      background-color: #f44336;
+      box-shadow: 0 0 5px #f44336;
+    }
+
+    .reconnecting {
+      background-color: #FF9800;
+      box-shadow: 0 0 5px #FF9800;
+      animation: blink 1s infinite;
+    }
+
+    @keyframes blink {
+      0% { opacity: 0.5; }
+      50% { opacity: 1; }
+      100% { opacity: 0.5; }
+    }
   </style>
 </head>
 <body>
@@ -734,6 +778,12 @@
 
   <!-- Test Mode Badge -->
   <div class="test-mode-badge">TEST MODE</div>
+
+  <!-- Connection Status -->
+  <div class="connection-status">
+    <div id="connectionIndicator" class="connection-indicator disconnected"></div>
+    <span id="connectionStatus">Connecting...</span>
+  </div>
 
   <!-- Main Container -->
   <div class="main-container">
@@ -867,6 +917,8 @@
     <button id="testAlertBtn" class="debug-btn">Test Alert</button>
     <button id="checkDbBtn" class="debug-btn">Check DB</button>
     <button id="clearDbBtn" class="debug-btn">Clear DB</button>
+    <button id="testEsp32Btn" class="debug-btn">Test ESP32</button>
+    <button id="reconnectBtn" class="debug-btn">Reconnect</button>
   </div>
 
   <script>
@@ -893,14 +945,42 @@
     
     const database = firebase.database();
     
-    // Check database connection
-    database.ref(".info/connected").on("value", function(snap) {
-      if (snap.val() === true) {
-        console.log("Connected to Firebase Database");
-      } else {
-        console.log("Disconnected from Firebase Database");
-      }
-    });
+    // Enhanced Firebase connection setup - NEW
+    try {
+      // Set connection timeout
+      database.setMaxOperationRetryTime(10000); // 10 seconds
+      
+      // Setup reconnect logic
+      const connectedRef = database.ref('.info/connected');
+      connectedRef.on('value', (snap) => {
+        const connectionIndicator = document.getElementById('connectionIndicator');
+        const connectionStatus = document.getElementById('connectionStatus');
+        
+        if (snap.val() === true) {
+          console.log("Connected to Firebase");
+          connectionIndicator.className = "connection-indicator connected";
+          connectionStatus.textContent = "Connected";
+        } else {
+          console.log("Disconnected from Firebase - will retry automatically");
+          connectionIndicator.className = "connection-indicator disconnected";
+          connectionStatus.textContent = "Disconnected";
+          
+          // Show status message
+          showStatusMessage('Connection lost. Trying to reconnect...', 'error');
+          
+          // Try to reconnect after a delay
+          setTimeout(() => {
+            connectionIndicator.className = "connection-indicator reconnecting";
+            connectionStatus.textContent = "Reconnecting...";
+            
+            // Force reconnection
+            database.goOnline();
+          }, 2000);
+        }
+      });
+    } catch (err) {
+      console.error("Firebase connection setup error:", err);
+    }
 
     // Global variables
     let stream = null;
@@ -908,6 +988,7 @@
     const upiId = "paytm.s15qoa1@pty";
     let currentPaymentId = null;
     let paymentListeners = {};
+    let confirmationInterval = null;
     
     // DOM elements
     const cameraFeed = document.getElementById('cameraFeed');
@@ -939,6 +1020,8 @@
     const testAlertBtn = document.getElementById('testAlertBtn');
     const checkDbBtn = document.getElementById('checkDbBtn');
     const clearDbBtn = document.getElementById('clearDbBtn');
+    const testEsp32Btn = document.getElementById('testEsp32Btn');
+    const reconnectBtn = document.getElementById('reconnectBtn');
 
     // Initialize payment details from local storage
     function initPaymentDetails() {
@@ -1151,7 +1234,7 @@
         try {
           await database.ref(`pendingPayments/${paymentId}`).set(paymentData);
           console.log('Payment alert sent successfully to Firebase:', paymentId);
-          showStatusMessage('Payment request sent to admin', 'info');
+          showStatusMessage('Payment request sent for confirmation', 'info');
           return paymentId;
         } catch (dbError) {
           console.error('Error sending payment alert to Firebase:', dbError);
@@ -1165,52 +1248,132 @@
       }
     }
 
-    // Check for payment confirmation
+    // NEW ROBUST CONFIRMATION LISTENER FUNCTION
+    function setupRobustConfirmationListener(paymentId) {
+      console.log("Setting up robust confirmation listener for:", paymentId);
+      
+      // Clear any existing listeners
+      if (window.currentConfirmListener) {
+        try {
+          database.ref(window.currentConfirmListener.path).off('value', window.currentConfirmListener.handler);
+        } catch (e) {
+          console.log("Error clearing previous listener:", e);
+        }
+      }
+      
+      // Create new confirmation listener with error handling
+      const confirmedRef = database.ref(`confirmedPayments/${paymentId}`);
+      const confirmHandler = (snapshot) => {
+        try {
+          console.log("Confirmation check for:", paymentId, snapshot.val());
+          if (snapshot.exists()) {
+            console.log("Payment confirmed:", paymentId);
+            
+            // Process the confirmation
+            try {
+              handleSuccessfulPayment(null, selectedPaymentMethod, document.getElementById('totalAmount').textContent.replace('₹', ''));
+            } catch (processError) {
+              console.error("Error processing confirmation:", processError);
+              alert("Payment confirmed but there was an error processing it. Please contact support.");
+            }
+            
+            // Remove listeners
+            try {
+              database.ref(`confirmedPayments/${paymentId}`).off('value');
+              database.ref(`canceledPayments/${paymentId}`).off('value');
+            } catch (e) {
+              console.log("Error removing listeners:", e);
+            }
+          }
+        } catch (e) {
+          console.error("Error in confirmation listener:", e);
+        }
+      };
+      
+      // Store reference to current listener
+      window.currentConfirmListener = {
+        path: `confirmedPayments/${paymentId}`,
+        handler: confirmHandler
+      };
+      
+      // Set up the listener with error handling
+      confirmedRef.on('value', confirmHandler, (error) => {
+        console.error("Confirmation listener error:", error);
+      });
+      
+      // Also set up cancellation listener with error handling
+      const canceledRef = database.ref(`canceledPayments/${paymentId}`);
+      canceledRef.on('value', (snapshot) => {
+        try {
+          if (snapshot.exists()) {
+            console.log("Payment canceled:", paymentId);
+            qrModal.style.display = 'none';
+            showStatusMessage('Payment was canceled', 'error');
+            payBtn.disabled = false;
+            payBtn.innerHTML = 'Pay Now';
+            currentPaymentId = null;
+            
+            // Remove listeners
+            try {
+              database.ref(`confirmedPayments/${paymentId}`).off('value');
+              database.ref(`canceledPayments/${paymentId}`).off('value');
+            } catch (e) {
+              console.log("Error removing listeners:", e);
+            }
+          }
+        } catch (e) {
+          console.error("Error in cancellation listener:", e);
+        }
+      }, (error) => {
+        console.error("Cancellation listener error:", error);
+      });
+    }
+
+    // UPDATED Check for payment confirmation
     function startPaymentConfirmationCheck(paymentId) {
-      console.log("Starting payment confirmation check for ID:", paymentId);
+      console.log("Starting robust payment confirmation check for ID:", paymentId);
+      
       // Show waiting text in QR modal
       qrWaitingText.style.display = 'block';
       
       // Store current payment ID
       currentPaymentId = paymentId;
       
-      // Listen for confirmation
-      const confirmedRef = database.ref(`confirmedPayments/${paymentId}`);
-      const canceledRef = database.ref(`canceledPayments/${paymentId}`);
+      // Set up robust listeners
+      setupRobustConfirmationListener(paymentId);
       
-      console.log("Setting up confirmation listeners...");
-      
-      // Confirmation listener
-      paymentListeners.confirm = confirmedRef.on('value', snapshot => {
-        console.log("Confirmation listener triggered:", snapshot.val());
-        if (snapshot.exists()) {
-          // Payment confirmed
-          console.log("Payment confirmed by admin!");
-          removePaymentListeners(paymentId);
-          
-          handleSuccessfulPayment(null, selectedPaymentMethod, document.getElementById('totalAmount').textContent.replace('₹', ''));
-        }
-      });
-      
-      // Cancellation listener
-      paymentListeners.cancel = canceledRef.on('value', snapshot => {
-        console.log("Cancellation listener triggered:", snapshot.val());
-        if (snapshot.exists()) {
-          // Payment canceled
-          console.log("Payment canceled by admin");
-          removePaymentListeners(paymentId);
-          qrModal.style.display = 'none';
-          
-          showStatusMessage('Payment was canceled by admin', 'error');
-          payBtn.disabled = false;
-          payBtn.innerHTML = 'Pay Now';
-          
-          currentPaymentId = null;
-        }
-      });
-      
-      // Verify listeners are working
       console.log("Payment listeners set up for ID:", paymentId);
+      
+      // Clean up any existing interval
+      if (confirmationInterval) {
+        clearInterval(confirmationInterval);
+      }
+      
+      // Also periodically check if payment is confirmed (as backup)
+      let checkCount = 0;
+      confirmationInterval = setInterval(() => {
+        checkCount++;
+        console.log(`Periodic check #${checkCount} for payment ${paymentId}`);
+        
+        // Only check up to 30 times (5 minutes)
+        if (checkCount > 30) {
+          clearInterval(confirmationInterval);
+          return;
+        }
+        
+        // Check confirmation status manually
+        database.ref(`confirmedPayments/${paymentId}`).once('value')
+          .then(snapshot => {
+            if (snapshot.exists()) {
+              console.log("Payment confirmed via periodic check");
+              clearInterval(confirmationInterval);
+              handleSuccessfulPayment(null, selectedPaymentMethod, document.getElementById('totalAmount').textContent.replace('₹', ''));
+            }
+          })
+          .catch(err => {
+            console.error("Error in periodic check:", err);
+          });
+      }, 10000); // Check every 10 seconds
     }
     
     // Cancel the current payment
@@ -1221,7 +1384,21 @@
         database.ref(`pendingPayments/${currentPaymentId}`).remove()
           .then(() => {
             console.log('Payment request canceled');
-            removePaymentListeners(currentPaymentId);
+            
+            // Clean up any interval
+            if (confirmationInterval) {
+              clearInterval(confirmationInterval);
+              confirmationInterval = null;
+            }
+            
+            // Remove listeners
+            try {
+              database.ref(`confirmedPayments/${currentPaymentId}`).off('value');
+              database.ref(`canceledPayments/${currentPaymentId}`).off('value');
+            } catch (e) {
+              console.log("Error removing listeners:", e);
+            }
+            
             qrModal.style.display = 'none';
             
             showStatusMessage('Payment request canceled', 'info');
@@ -1241,15 +1418,22 @@
     // Remove payment listeners
     function removePaymentListeners(paymentId) {
       console.log("Removing payment listeners for ID:", paymentId);
-      if (paymentListeners.confirm) {
-        database.ref(`confirmedPayments/${paymentId}`).off('value', paymentListeners.confirm);
+      
+      // Clean up interval if exists
+      if (confirmationInterval) {
+        clearInterval(confirmationInterval);
+        confirmationInterval = null;
       }
       
-      if (paymentListeners.cancel) {
-        database.ref(`canceledPayments/${paymentId}`).off('value', paymentListeners.cancel);
+      // Try to remove Firebase listeners
+      try {
+        database.ref(`confirmedPayments/${paymentId}`).off();
+        database.ref(`canceledPayments/${paymentId}`).off();
+      } catch (e) {
+        console.log("Error removing Firebase listeners:", e);
       }
       
-      paymentListeners = {};
+      window.currentConfirmListener = null;
     }
 
     // Add click event listeners to payment methods
@@ -1333,7 +1517,7 @@
             // Start waiting for confirmation
             startPaymentConfirmationCheck(paymentId);
           } else {
-            showStatusMessage('Could not connect to payment server. Please try again.', 'error');
+            showStatusMessage('Could not connect to payment system. Please try again.', 'error');
           }
         })
         .catch(err => {
@@ -1576,168 +1760,3 @@
         localStorage.setItem('newBooking', JSON.stringify(newBooking));
         
         // Also store directly in consoleBookings
-        const bookingsJSON = localStorage.getItem('consoleBookings') || '[]';
-        let bookings = JSON.parse(bookingsJSON);
-        
-        // Remove any existing booking for this console
-        bookings = bookings.filter(b => b.console !== consoleName);
-        
-        // Add the new booking
-        bookings.push(newBooking);
-        
-        // Save updated bookings
-        localStorage.setItem('consoleBookings', JSON.stringify(bookings));
-        
-        // Show success message
-        if (powerCommandSent) {
-          showStatusMessage('Payment successful! Your device is now powered on. Redirecting...', 'success');
-        } else {
-          showStatusMessage('Payment successful! Redirecting to main screen...', 'success');
-        }
-        
-        // Stop camera stream
-        if (stream) {
-          stream.getTracks().forEach(track => track.stop());
-        }
-        
-        // Clean up Firebase listeners
-        if (currentPaymentId) {
-          removePaymentListeners(currentPaymentId);
-          currentPaymentId = null;
-        }
-        
-        // Redirect after a delay
-        setTimeout(() => {
-          window.location.href = 'index.html';
-        }, 2000);
-        
-      } catch (err) {
-        console.error('Payment processing error:', err);
-        showStatusMessage(`Payment processing error: ${err.message}. Please contact support.`, 'error');
-        
-        // Clean up Firebase listeners
-        if (currentPaymentId) {
-          removePaymentListeners(currentPaymentId);
-          currentPaymentId = null;
-        }
-      }
-    }
-
-    // Back button handler
-    backBtn.addEventListener('click', () => {
-      // Stop camera stream if it's active
-      if (stream) {
-        stream.getTracks().forEach(track => track.stop());
-      }
-      
-      // Clean up Firebase listeners
-      if (currentPaymentId) {
-        removePaymentListeners(currentPaymentId);
-        currentPaymentId = null;
-      }
-      
-      // Go back to duration selection
-      window.location.href = 'duration.html';
-    });
-
-    // Show status message
-    function showStatusMessage(message, type) {
-      console.log(`Status: [${type}] ${message}`);
-      statusMessage.textContent = message;
-      statusMessage.className = `status-message ${type}`;
-      statusMessage.style.display = 'block';
-      
-      // Hide after 5 seconds
-      setTimeout(() => {
-        statusMessage.style.display = 'none';
-      }, 5000);
-    }
-    
-    // Listen for admin commands (like redirect)
-    function listenForAdminCommands() {
-      const commandsRef = database.ref('commands');
-      commandsRef.limitToLast(1).on('child_added', snapshot => {
-        const command = snapshot.val();
-        
-        if (command && Date.now() - command.timestamp < 60000) { // Only process commands from the last minute
-          console.log('Received admin command:', command);
-          
-          if (command.type === 'redirect' && command.page) {
-            // Redirect to the specified page
-            window.location.href = command.page;
-          }
-        }
-      });
-    }
-    
-    // Debug functions
-    testAlertBtn.addEventListener('click', function() {
-      const testId = 'test-' + Date.now();
-      database.ref(`pendingPayments/${testId}`).set({
-        id: testId,
-        console: 'TEST PS5',
-        minutes: 30,
-        method: 'upi',
-        players: 1,
-        amount: 100,
-        createdAt: new Date().toISOString(),
-        status: 'pending'
-      }).then(() => {
-        console.log('Test alert sent with ID:', testId);
-        alert('Test alert sent! Check remote app.');
-      }).catch(err => {
-        console.error('Test alert failed:', err);
-        alert('Test alert failed: ' + err.message);
-      });
-    });
-    
-    checkDbBtn.addEventListener('click', function() {
-      database.ref("pendingPayments").once("value", function(snapshot) {
-        const pendingData = snapshot.val();
-        console.log("Current pendingPayments:", pendingData);
-        alert(pendingData ? `Found ${Object.keys(pendingData).length} pending payments` : "No pending payments");
-      });
-    });
-    
-    clearDbBtn.addEventListener('click', function() {
-      if (confirm("Clear all pending payments?")) {
-        database.ref("pendingPayments").remove()
-          .then(() => {
-            console.log("All pending payments cleared");
-            alert("All pending payments cleared");
-          })
-          .catch(err => {
-            console.error("Failed to clear payments:", err);
-            alert("Failed: " + err.message);
-          });
-      }
-    });
-
-    // Initialize page
-    function init() {
-      // Update instruction to not mention "Confirm Payment"
-      const qrInstructionsElem = document.querySelector('.qr-instructions');
-      if (qrInstructionsElem) {
-        qrInstructionsElem.innerHTML = `
-          1. Open any UPI app (GPay, PhonePe, Paytm, etc.)<br>
-          2. Scan this QR code or enter UPI ID manually<br>
-          3. Enter the amount shown above<br>
-          4. Complete payment in your UPI app and wait
-        `;
-      }
-      
-      initPaymentDetails();
-      initCamera();
-      listenForAdminCommands();
-      
-      // Check database connection
-      database.ref(".info/connected").once("value", snap => {
-        console.log("Firebase connection status:", snap.val() ? "Connected" : "Disconnected");
-      });
-    }
-
-    // Start initialization when page loads
-    window.onload = init;
-  </script>
-</body>
-</html>
