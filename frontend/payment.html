@@ -718,6 +718,34 @@
       margin-top: 10px;
       cursor: pointer;
     }
+    
+    /* ESP32 Integration - Payment Success Notification */
+    .esp32-badge {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      background-color: rgba(0, 128, 0, 0.7);
+      color: white;
+      padding: 10px 15px;
+      border-radius: 30px;
+      font-size: 0.8rem;
+      font-weight: bold;
+      display: none;
+      align-items: center;
+      gap: 8px;
+      z-index: 1000;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      animation: fadeInUp 0.5s;
+    }
+    
+    .esp32-badge.active {
+      display: flex;
+    }
+    
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
   </style>
 </head>
 <body>
@@ -732,6 +760,12 @@
 
   <!-- Test Mode Badge -->
   <div class="test-mode-badge">TEST MODE</div>
+  
+  <!-- ESP32 Status Indicator -->
+  <div class="esp32-badge" id="esp32Badge">
+    <div class="loading-spinner" style="width: 12px; height: 12px;"></div>
+    <span>ESP32 Payment Detection Active</span>
+  </div>
 
   <!-- Main Container -->
   <div class="main-container">
@@ -866,6 +900,7 @@
     <button id="checkDbBtn" class="debug-btn">Check DB</button>
     <button id="clearDbBtn" class="debug-btn">Clear DB</button>
     <button id="simulateSound" class="debug-btn">Simulate Paytm</button>
+    <button id="testESP32" class="debug-btn">Test ESP32</button>
   </div>
 
   <script>
@@ -918,6 +953,7 @@
     const statusMessage = document.getElementById('statusMessage');
     const paymentMethods = document.querySelectorAll('.payment-method');
     const skipCameraBtn = document.getElementById('skipCameraBtn');
+    const esp32Badge = document.getElementById('esp32Badge');
     
     // QR Modal elements
     const qrModal = document.getElementById('qrModal');
@@ -933,6 +969,7 @@
     const checkDbBtn = document.getElementById('checkDbBtn');
     const clearDbBtn = document.getElementById('clearDbBtn');
     const simulateSound = document.getElementById('simulateSound');
+    const testESP32 = document.getElementById('testESP32');
 
     // Initialize payment details from local storage
     function initPaymentDetails() {
@@ -991,6 +1028,149 @@
       
       // Set the src to preload
       preloadedQR.src = googleChartUrl;
+    }
+
+    // Listen for direct completion from ESP32
+    function setupDirectCompleteListener() {
+      console.log("Setting up ESP32 direct completion listener");
+      
+      // Show ESP32 status badge
+      esp32Badge.classList.add('active');
+      
+      database.ref('directComplete').on('value', snapshot => {
+        if (snapshot.exists()) {
+          const completionData = snapshot.val();
+          console.log('Direct completion detected:', completionData);
+          
+          // Check if this matches our current payment
+          if (currentPaymentId === completionData.paymentId) {
+            console.log('Matching payment ID - processing direct completion');
+            // Clear the directComplete node to avoid duplicate processing
+            database.ref('directComplete').remove();
+            
+            // Handle the payment success directly
+            handleDirectCompletion();
+          } else if (currentPaymentId && completionData.status === 'completed') {
+            console.log('New payment completion detected but for different payment ID');
+            // Clear the node anyway
+            database.ref('directComplete').remove();
+          }
+        }
+      });
+      
+      console.log('Direct completion listener setup complete');
+    }
+
+    // Handle direct completion without redirect
+    function handleDirectCompletion() {
+      try {
+        const amount = document.getElementById('totalAmount').textContent.replace('₹', '');
+        
+        // Show success message
+        showStatusMessage('Payment confirmed by ESP32!', 'success');
+        
+        // Hide QR modal if it's open
+        qrModal.style.display = 'none';
+        
+        // Show a full screen success message
+        const successOverlay = document.createElement('div');
+        successOverlay.className = 'waiting-overlay';
+        successOverlay.style.display = 'flex';
+        successOverlay.style.backgroundColor = 'rgba(0, 128, 0, 0.85)';
+        
+        successOverlay.innerHTML = `
+          <div class="waiting-container" style="border-color: #4CAF50; background: rgba(0, 128, 0, 0.7);">
+            <div style="font-size: 64px; margin-bottom: 20px;">✓</div>
+            <div class="waiting-title" style="color: white;">Payment Successful!</div>
+            <div class="waiting-message">Your session will start shortly...</div>
+            <div class="waiting-message" style="margin-top: 20px;">No need to return to kiosk</div>
+          </div>
+        `;
+        
+        document.body.appendChild(successOverlay);
+        
+        // Store booking info just like before
+        const consoleName = document.getElementById('selectedConsole').textContent;
+        const durationText = document.getElementById('selectedDuration').textContent;
+        
+        // Extract number from duration text
+        let durationMin;
+        if (durationText.includes('min')) {
+          durationMin = parseInt(durationText.match(/\d+/)[0]);
+        } else if (durationText.includes('hour')) {
+          if (durationText.includes('1.5')) {
+            durationMin = 90;
+          } else {
+            durationMin = parseInt(durationText.match(/\d+/)[0]) * 60;
+          }
+        } else {
+          durationMin = parseInt(localStorage.getItem('selectedDuration'));
+        }
+        
+        const players = localStorage.getItem('selectedControllers') || '1';
+        
+        // Calculate end time for booking
+        const endTime = Date.now() + (durationMin * 60 * 1000);
+        
+        // Get the photo data URL
+        const photoDataUrl = capturePhoto();
+        
+        // Create unique ID for this booking
+        const bookingId = `${consoleName}-${endTime}`;
+        
+        // Store the photo locally
+        const photosJSON = localStorage.getItem('userPhotos') || '{}';
+        let photos;
+        try {
+          photos = JSON.parse(photosJSON);
+        } catch (e) {
+          photos = {};
+        }
+        photos[bookingId] = photoDataUrl;
+        localStorage.setItem('userPhotos', JSON.stringify(photos));
+        
+        // Store booking in the multi-booking format
+        const newBooking = {
+          console: consoleName,
+          endTime: endTime,
+          minutes: durationMin,
+          method: selectedPaymentMethod || 'upi',
+          players: players,
+          amount: amount,
+          direct: true // Flag for direct ESP32 confirmation
+        };
+        
+        // Use storage event to communicate between tabs
+        localStorage.setItem('newBooking', JSON.stringify(newBooking));
+        
+        // Also store directly in consoleBookings
+        const bookingsJSON = localStorage.getItem('consoleBookings') || '[]';
+        let bookings = JSON.parse(bookingsJSON);
+        
+        // Remove any existing booking for this console
+        bookings = bookings.filter(b => b.console !== consoleName);
+        
+        // Add the new booking
+        bookings.push(newBooking);
+        
+        // Save updated bookings
+        localStorage.setItem('consoleBookings', JSON.stringify(bookings));
+        
+        // Stop camera stream
+        if (stream) {
+          stream.getTracks().forEach(track => track.stop());
+        }
+        
+        // Clean up Firebase listeners
+        if (currentPaymentId) {
+          removePaymentListeners(currentPaymentId);
+          currentPaymentId = null;
+        }
+        
+      } catch (err) {
+        console.error('Direct completion processing error:', err);
+        showStatusMessage(`Processing error: ${err.message}. Please contact support.`, 'error');
+      }
     }
     
     // Skip camera function
@@ -1279,7 +1459,15 @@
           console.log("Payment confirmed by Paytm sound detection!");
           removePaymentListeners(paymentId);
           
-          handleSuccessfulPayment(null, selectedPaymentMethod, document.getElementById('totalAmount').textContent.replace('₹', ''));
+          // Check if this is a direct-to-payment-html confirmation from ESP32
+          const paymentData = snapshot.val();
+          if (paymentData && paymentData.directToPaymentHtml === true) {
+            // Use the special direct completion handler
+            handleDirectCompletion();
+          } else {
+            // Use the standard redirect flow
+            handleSuccessfulPayment(null, selectedPaymentMethod, document.getElementById('totalAmount').textContent.replace('₹', ''));
+          }
         }
       });
       
@@ -1563,22 +1751,7 @@
         console.error('Payment processing error:', err);
         showStatusMessage(`Payment processing error: ${err.message}. Please contact support.`, 'error');
         
-        // Clean up Firebase listeners
-        if (currentPaymentId) {
-          removePaymentListeners(currentPaymentId);
-          currentPaymentId = null;
-        }
-      }
-    }
-
-    // Back button handler
-    backBtn.addEventListener('click', () => {
-      // Stop camera stream if it's active
-      if (stream) {
-        stream.getTracks().forEach(track => track.stop());
-      }
-      
-      // Clean up Firebase listeners
+             // Clean up Firebase listeners
       if (currentPaymentId) {
         removePaymentListeners(currentPaymentId);
         currentPaymentId = null;
@@ -1675,6 +1848,57 @@
         alert("No active payment to confirm");
       }
     });
+    
+    // Test ESP32 direct completion
+    testESP32.addEventListener('click', function() {
+      if (currentPaymentId) {
+        console.log("Testing ESP32 direct completion for payment:", currentPaymentId);
+        
+        // Set up the direct completion node
+        database.ref("directComplete").set({
+          paymentId: currentPaymentId,
+          timestamp: "2025-08-06T15:01:51Z",
+          status: "completed"
+        }).then(() => {
+          console.log("ESP32 direct completion test successful");
+        }).catch(err => {
+          console.error("ESP32 test failed:", err);
+          alert("ESP32 test failed: " + err.message);
+        });
+      } else {
+        // Create a test payment and then trigger completion
+        const testId = 'esp32-test-' + Date.now();
+        
+        // Create test payment first
+        database.ref(`pendingPayments/${testId}`).set({
+          id: testId,
+          console: 'TEST PS5',
+          minutes: 30,
+          method: 'upi',
+          players: 1,
+          amount: 100,
+          createdAt: new Date().toISOString(),
+          status: 'pending'
+        }).then(() => {
+          console.log('ESP32 test payment created:', testId);
+          
+          // Set current payment ID
+          currentPaymentId = testId;
+          
+          // Now trigger the direct completion
+          return database.ref("directComplete").set({
+            paymentId: testId,
+            timestamp: "2025-08-06T15:01:51Z",
+            status: "completed"
+          });
+        }).then(() => {
+          console.log("ESP32 direct completion test successful");
+        }).catch(err => {
+          console.error("ESP32 test failed:", err);
+          alert("ESP32 test failed: " + err.message);
+        });
+      }
+    });
 
     // Initialize page
     window.onload = function() {
@@ -1684,6 +1908,9 @@
       
       // Then initialize camera
       setTimeout(initCamera, 500);
+      
+      // Setup direct complete listener for ESP32 integration
+      setupDirectCompleteListener();
     };
   </script>
 </body>
