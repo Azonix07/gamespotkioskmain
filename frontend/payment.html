@@ -1144,6 +1144,7 @@
 
     // Enhanced Firebase-based ESP32 Control - UPDATED WITH NEW TIMESTAMP
 // Enhanced Firebase-based ESP32 Control - UPDATED WITH NEW TIMESTAMP
+// Enhanced Firebase-based ESP32 Control - UPDATED WITH CURRENT TIMESTAMP
 function activatePS5(durationMinutes) {
   showStatusMessage("Activating PS5 #4...", "info");
   deviceControlBadge.classList.add('active');
@@ -1160,7 +1161,7 @@ function activatePS5(durationMinutes) {
   const command = {
     command: "on",
     deviceId: 4,
-    timestamp: "2025-08-09 12:48:50", // Updated timestamp
+    timestamp: "2025-08-09 13:03:13", // Updated timestamp
     user: "Azonix07", // Updated username
     duration: durationMinutes
   };
@@ -1171,44 +1172,42 @@ function activatePS5(durationMinutes) {
       console.log("Command sent to Firebase successfully");
       showStatusMessage("PS5 activation command sent!", "info");
       
-      // Rest of the function remains the same
-      // ...
-          
-          // Wait for acknowledgment from ESP32
-          return new Promise((resolve, reject) => {
-            let responseListener;
-            let timeoutId = setTimeout(() => {
-              if (responseListener) {
-                database.ref('relayResponses/ps5_4').off('value', responseListener);
-              }
-              console.warn("ESP32 acknowledgment timeout");
-              showStatusMessage("PS5 #4 should be activating soon", "info");
-              resolve(true); // Assume success even without acknowledgment
-            }, 5000); // 5 second timeout
+      // Wait for acknowledgment from ESP32
+      return new Promise((resolve, reject) => {
+        let responseListener;
+        let timeoutId = setTimeout(() => {
+          if (responseListener) {
+            database.ref('relayResponses/ps5_4').off('value', responseListener);
+          }
+          console.warn("ESP32 acknowledgment timeout");
+          showStatusMessage("PS5 #4 should be activating soon", "info");
+          resolve(true); // Assume success even without acknowledgment
+        }, 5000); // 5 second timeout
+        
+        responseListener = database.ref('relayResponses/ps5_4').on('value', snapshot => {
+          if (snapshot.exists()) {
+            clearTimeout(timeoutId);
+            database.ref('relayResponses/ps5_4').off('value', responseListener);
             
-            responseListener = database.ref('relayResponses/ps5_4').on('value', snapshot => {
-              if (snapshot.exists()) {
-                clearTimeout(timeoutId);
-                database.ref('relayResponses/ps5_4').off('value', responseListener);
-                
-                const response = snapshot.val();
-                if (response.success) {
-                  console.log("ESP32 acknowledged command successfully");
-                  showStatusMessage("PS5 #4 activated successfully!", "success");
-                  deviceControlBadge.innerHTML = `<span>PS5 #4 Active</span>`;
-                  deviceControlBadge.style.backgroundColor = "rgba(0, 128, 0, 0.7)";
-                  resolve(true);
-                } else {
-                  console.error("ESP32 reported command failure");
-                  showStatusMessage("ESP32 reported an error", "error");
-                  deviceControlBadge.innerHTML = `<span>PS5 Activation Error</span>`;
-                  deviceControlBadge.style.backgroundColor = "rgba(255, 0, 0, 0.7)";
-                  resolve(false);
-                }
-              }
-            });
-          });
-        })
+            const response = snapshot.val();
+            if (response.success) {
+              console.log("ESP32 acknowledged command successfully");
+              showStatusMessage("PS5 #4 activated successfully!", "success");
+              deviceControlBadge.innerHTML = `<span>PS5 #4 Active</span>`;
+              deviceControlBadge.style.backgroundColor = "rgba(0, 128, 0, 0.7)";
+              resolve(true);
+            } else {
+              console.error("ESP32 reported command failure");
+              showStatusMessage("ESP32 reported an error", "error");
+              deviceControlBadge.innerHTML = `<span>PS5 Activation Error</span>`;
+              deviceControlBadge.style.backgroundColor = "rgba(255, 0, 0, 0.7)";
+              resolve(false);
+            }
+          }
+        });
+      });
+    });
+}
         .catch(error => {
           console.error("Error sending command to Firebase:", error);
           showStatusMessage("Activation error: " + error.message, "error");
