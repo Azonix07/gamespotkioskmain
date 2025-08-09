@@ -1142,72 +1142,69 @@
     const qrCloseBtn = document.getElementById('qrCloseBtn');
     const qrWaitingText = document.getElementById('qrWaitingText');
 
-    // Enhanced Firebase-based ESP32 Control - UPDATED WITH NEW TIMESTAMP
-// Enhanced Firebase-based ESP32 Control - UPDATED WITH NEW TIMESTAMP
-// Enhanced Firebase-based ESP32 Control - UPDATED WITH CURRENT TIMESTAMP
-function activatePS5(durationMinutes) {
-  showStatusMessage("Activating PS5 #4...", "info");
-  deviceControlBadge.classList.add('active');
-  
-  if (localAccessMode) {
-    console.log("Local demo mode: Simulating successful PS5 activation");
-    showStatusMessage("PS5 #4 activated successfully! (Demo Mode)", "success");
-    deviceControlBadge.innerHTML = `<span>PS5 #4 Active (Demo Mode)</span>`;
-    deviceControlBadge.style.backgroundColor = "rgba(0, 128, 0, 0.7)";
-    return Promise.resolve(true);
-  }
-  
-  // Create a command in Firebase
-  const command = {
-    command: "on",
-    deviceId: 4,
-    timestamp: "2025-08-09 13:03:13", // Updated timestamp
-    user: "Azonix07", // Updated username
-    duration: durationMinutes
-  };
-  
-  // Send command via Firebase
-  return database.ref('relayCommands/ps5_4').set(command)
-    .then(() => {
-      console.log("Command sent to Firebase successfully");
-      showStatusMessage("PS5 activation command sent!", "info");
+    // Enhanced Firebase-based ESP32 Control - UPDATED WITH CURRENT TIMESTAMP
+    function activatePS5(durationMinutes) {
+      showStatusMessage("Activating PS5 #4...", "info");
+      deviceControlBadge.classList.add('active');
       
-      // Wait for acknowledgment from ESP32
-      return new Promise((resolve, reject) => {
-        let responseListener;
-        let timeoutId = setTimeout(() => {
-          if (responseListener) {
-            database.ref('relayResponses/ps5_4').off('value', responseListener);
-          }
-          console.warn("ESP32 acknowledgment timeout");
-          showStatusMessage("PS5 #4 should be activating soon", "info");
-          resolve(true); // Assume success even without acknowledgment
-        }, 5000); // 5 second timeout
-        
-        responseListener = database.ref('relayResponses/ps5_4').on('value', snapshot => {
-          if (snapshot.exists()) {
-            clearTimeout(timeoutId);
-            database.ref('relayResponses/ps5_4').off('value', responseListener);
+      if (localAccessMode) {
+        console.log("Local demo mode: Simulating successful PS5 activation");
+        showStatusMessage("PS5 #4 activated successfully! (Demo Mode)", "success");
+        deviceControlBadge.innerHTML = `<span>PS5 #4 Active (Demo Mode)</span>`;
+        deviceControlBadge.style.backgroundColor = "rgba(0, 128, 0, 0.7)";
+        return Promise.resolve(true);
+      }
+      
+      // Create a command in Firebase
+      const command = {
+        command: "on",
+        deviceId: 4,
+        timestamp: "2025-08-09 13:23:17", // Updated timestamp
+        user: "Azonix07", // Updated username
+        duration: durationMinutes
+      };
+      
+      // Send command via Firebase
+      return database.ref('relayCommands/ps5_4').set(command)
+        .then(() => {
+          console.log("Command sent to Firebase successfully");
+          showStatusMessage("PS5 activation command sent!", "info");
+          
+          // Wait for acknowledgment from ESP32
+          return new Promise((resolve, reject) => {
+            let responseListener;
+            let timeoutId = setTimeout(() => {
+              if (responseListener) {
+                database.ref('relayResponses/ps5_4').off('value', responseListener);
+              }
+              console.warn("ESP32 acknowledgment timeout");
+              showStatusMessage("PS5 #4 should be activating soon", "info");
+              resolve(true); // Assume success even without acknowledgment
+            }, 5000); // 5 second timeout
             
-            const response = snapshot.val();
-            if (response.success) {
-              console.log("ESP32 acknowledged command successfully");
-              showStatusMessage("PS5 #4 activated successfully!", "success");
-              deviceControlBadge.innerHTML = `<span>PS5 #4 Active</span>`;
-              deviceControlBadge.style.backgroundColor = "rgba(0, 128, 0, 0.7)";
-              resolve(true);
-            } else {
-              console.error("ESP32 reported command failure");
-              showStatusMessage("ESP32 reported an error", "error");
-              deviceControlBadge.innerHTML = `<span>PS5 Activation Error</span>`;
-              deviceControlBadge.style.backgroundColor = "rgba(255, 0, 0, 0.7)";
-              resolve(false);
-            }
-          }
-        });
-      });
-    });
-}
+            responseListener = database.ref('relayResponses/ps5_4').on('value', snapshot => {
+              if (snapshot.exists()) {
+                clearTimeout(timeoutId);
+                database.ref('relayResponses/ps5_4').off('value', responseListener);
+                
+                const response = snapshot.val();
+                if (response.success) {
+                  console.log("ESP32 acknowledged command successfully");
+                  showStatusMessage("PS5 #4 activated successfully!", "success");
+                  deviceControlBadge.innerHTML = `<span>PS5 #4 Active</span>`;
+                  deviceControlBadge.style.backgroundColor = "rgba(0, 128, 0, 0.7)";
+                  resolve(true);
+                } else {
+                  console.error("ESP32 reported command failure");
+                  showStatusMessage("ESP32 reported an error", "error");
+                  deviceControlBadge.innerHTML = `<span>PS5 Activation Error</span>`;
+                  deviceControlBadge.style.backgroundColor = "rgba(255, 0, 0, 0.7)";
+                  resolve(false);
+                }
+              }
+            });
+          });
+        })
         .catch(error => {
           console.error("Error sending command to Firebase:", error);
           showStatusMessage("Activation error: " + error.message, "error");
@@ -1320,7 +1317,7 @@ function activatePS5(durationMinutes) {
           // Send command via Firebase
           await database.ref('relayCommands/ps5_4').set({
             command: "on",
-            timestamp: "2025-08-09 12:34:19", // Updated timestamp
+            timestamp: "2025-08-09 13:23:17", // Updated timestamp
             user: "Azonix07" // Updated username
           });
           
@@ -1342,7 +1339,7 @@ function activatePS5(durationMinutes) {
           // Send command via Firebase
           await database.ref('relayCommands/ps5_4').set({
             command: "off",
-            timestamp: "2025-08-09 12:34:19", // Updated timestamp
+            timestamp: "2025-08-09 13:23:17", // Updated timestamp
             user: "Azonix07" // Updated username
           });
           
@@ -1364,7 +1361,7 @@ function activatePS5(durationMinutes) {
           // Send command via Firebase
           await database.ref('relayCommands/ps5_4').set({
             command: "test",
-            timestamp: "2025-08-09 12:34:19", // Updated timestamp
+            timestamp: "2025-08-09 13:23:17", // Updated timestamp
             user: "Azonix07" // Updated username
           });
           
@@ -1560,7 +1557,7 @@ function activatePS5(durationMinutes) {
           players: players,
           amount: amount,
           direct: true, // Flag for direct ESP32 confirmation
-          timestamp: "2025-08-09 12:34:19", // Updated timestamp
+          timestamp: "2025-08-09 13:23:17", // Updated timestamp
           user: 'Azonix07' // Updated username
         };
         
@@ -1757,6 +1754,7 @@ function activatePS5(durationMinutes) {
           
           showStatusMessage('Camera activated. Select payment method to continue.', 'info');
         });
+        
                 // Add error handler for video
         cameraFeed.addEventListener('error', function(e) {
           console.error("Video error:", e);
@@ -1938,7 +1936,7 @@ function activatePS5(durationMinutes) {
           method: method,
           players: parseInt(players),
           amount: parseInt(amount),
-          createdAt: "2025-08-09 12:45:10", // Updated timestamp
+          createdAt: "2025-08-09 13:28:41", // Updated timestamp
           status: 'pending',
           user: 'Azonix07' // Updated username
         };
@@ -2235,7 +2233,7 @@ function activatePS5(durationMinutes) {
           players: players,
           amount: amount,
           transactionId: response ? response.razorpay_payment_id : null,
-          timestamp: "2025-08-09 12:45:10", // Updated timestamp
+          timestamp: "2025-08-09 13:28:41", // Updated timestamp
           user: 'Azonix07' // Updated username
         };
         
