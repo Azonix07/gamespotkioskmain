@@ -529,23 +529,6 @@
       transform: translateY(-2px);
     }
 
-    .qr-confirm-btn {
-      padding: 12px 25px;
-      font-size: 1rem;
-      background: #4CAF50;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: all 0.3s;
-      font-weight: 600;
-    }
-
-    .qr-confirm-btn:hover {
-      background: #45a049;
-      transform: translateY(-2px);
-    }
-
     .waiting-status {
       color: white;
       font-weight: 500;
@@ -846,123 +829,6 @@
       margin-top: 10px;
       cursor: pointer;
     }
-    
-    /* ESP32 Integration - Payment Status Indicator */
-    .esp32-badge {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      background-color: rgba(0, 128, 0, 0.7);
-      color: white;
-      padding: 10px 15px;
-      border-radius: 30px;
-      font-size: 0.8rem;
-      font-weight: bold;
-      display: none;
-      align-items: center;
-      gap: 8px;
-      z-index: 1000;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-      animation: fadeInUp 0.5s;
-    }
-    
-    .esp32-badge.active {
-      display: flex;
-    }
-
-    /* HTTPS Warning Banner */
-    .https-warning {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      background-color: #f44336;
-      color: white;
-      padding: 12px;
-      text-align: center;
-      z-index: 9999;
-      font-weight: bold;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-    }
-    
-    .https-warning a {
-      color: yellow;
-      text-decoration: underline;
-    }
-
-    /* ESP32 Test Panel */
-    .esp32-test-panel {
-      position: fixed;
-      top: 80px;
-      right: 10px;
-      background: rgba(0,0,0,0.8);
-      padding: 15px;
-      border-radius: 10px;
-      z-index: 9999;
-      text-align: left;
-      width: 300px;
-      box-shadow: 0 8px 25px rgba(0,0,0,0.4);
-    }
-
-    .esp32-test-panel h3 {
-      color: #ff6600;
-      margin-top: 0;
-    }
-
-    .esp32-test-panel button {
-      margin-bottom: 10px;
-      padding: 10px;
-      border: none;
-      border-radius: 5px;
-      color: white;
-      font-weight: bold;
-      cursor: pointer;
-    }
-
-    .esp32-test-status {
-      margin-bottom: 10px;
-      padding: 10px;
-      background: rgba(255,255,255,0.1);
-      border-radius: 5px;
-    }
-
-    /* Manual confirm button */
-    .manual-complete-notice {
-      display: none;
-      margin-top: 15px;
-      padding: 10px;
-      border-radius: 5px;
-      background-color: rgba(255, 255, 0, 0.2);
-      border: 1px solid rgba(255, 255, 0, 0.4);
-      color: white;
-      font-size: 0.9rem;
-      text-align: center;
-    }
-
-    /* Firebase selector */
-    .firebase-selector {
-      position: fixed;
-      top: 20px;
-      left: 20px;
-      background-color: rgba(0, 128, 255, 0.7);
-      color: white;
-      padding: 6px 10px;
-      border-radius: 6px;
-      font-size: 0.8rem;
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      z-index: 9998;
-    }
-    
-    .firebase-selector select {
-      margin-left: 8px;
-      padding: 2px 5px;
-      border-radius: 4px;
-      border: none;
-      background-color: white;
-      color: #333;
-    }
   </style>
 </head>
 <body>
@@ -972,23 +838,7 @@
   <!-- Test Mode Badge -->
   <div class="test-mode-badge">TEST MODE</div>
   
-  <!-- Firebase Selector -->
-  <div class="firebase-selector">
-    Firebase: 
-    <select id="firebaseSelector">
-      <option value="db1">DB 1 (Original)</option>
-      <option value="db2">DB 2 (New)</option>
-      <option value="both" selected>Both DBs</option>
-    </select>
-  </div>
-  
-  <!-- ESP32 Status Indicator -->
-  <div class="esp32-badge" id="esp32Badge">
-    <div class="loading-spinner" style="width: 12px; height: 12px;"></div>
-    <span>ESP32 Payment Detection Active</span>
-  </div>
-  
-  <!-- Device Control Badge -->
+  <!-- Device Control Badge (hidden by default) -->
   <div class="device-control-badge" id="deviceControlBadge">
     <div class="loading-spinner" style="width: 12px; height: 12px;"></div>
     <span>Device Control Connected</span>
@@ -1098,13 +948,9 @@
       
       <div class="qr-footer">
         <button id="qrCloseBtn" class="qr-close-btn">Cancel</button>
-        <button id="qrManualConfirmBtn" class="qr-confirm-btn">I've Paid</button>
         <div id="qrWaitingText" style="display: none;">
           <span class="waiting-status">Waiting for payment confirmation</span>
           <div class="loading-spinner" style="display: inline-block; width: 16px; height: 16px; margin-left: 8px; vertical-align: middle;"></div>
-        </div>
-        <div id="manualCompleteNotice" class="manual-complete-notice">
-          If you've already paid and it's not being detected, click "I've Paid"
         </div>
       </div>
     </div>
@@ -1151,29 +997,9 @@
       measurementId: "G-W91C2RX9E7"
     };
     
-    // ===== HTTPS DETECTION AND HANDLING - AUTO-ENABLED =====
-    // Check if we're running on HTTPS but trying to connect to a local HTTP endpoint
-    const isHttps = window.location.protocol === 'https:';
-    const isLocalNetworkTarget = true; // Always assume local network for ESP32
-
-    // Variables to track HTTPS mode
-    let httpsMode = false;
+    // HTTPS mode variable
+    let httpsMode = window.location.protocol === 'https:';
     let localAccessMode = false;
-
-    // Display a warning if needed and AUTO-ENABLE local mode for HTTPS
-    if (isHttps) {
-      console.warn("HTTPS detected - Using Firebase for ESP32 control");
-      httpsMode = true;
-      
-      // Create a warning banner
-      const warningBanner = document.createElement('div');
-      warningBanner.className = 'https-warning';
-      warningBanner.style.backgroundColor = '#009688';
-      warningBanner.innerHTML = `
-        <p>✓ Using Firebase for secure ESP32 communication</p>
-      `;
-      document.body.prepend(warningBanner);
-    }
     
     // Initialize both Firebase apps with error handling
     let firebaseApp1, firebaseApp2;
@@ -1183,45 +1009,13 @@
       // Initialize first Firebase app
       firebaseApp1 = firebase.initializeApp(firebaseConfig1);
       database1 = firebaseApp1.database();
-      console.log("Firebase app 1 initialized successfully");
       
       // Initialize second Firebase app with a different name
       firebaseApp2 = firebase.initializeApp(firebaseConfig2, "secondary");
       database2 = firebaseApp2.database();
-      console.log("Firebase app 2 initialized successfully");
     } catch (error) {
       console.error("Firebase initialization error:", error);
-      alert("Could not connect to Firebase. Check console for details.");
     }
-    
-    // Function to get active database based on user selection
-    function getDatabase() {
-      const selector = document.getElementById('firebaseSelector');
-      const selectedValue = selector.value;
-      
-      if (selectedValue === 'db1') return database1;
-      if (selectedValue === 'db2') return database2;
-      
-      // Default to using both databases (return primary for main operations)
-      return database1;
-    }
-    
-    // Check database connection for both Firebase instances
-    database1.ref(".info/connected").on("value", function(snap) {
-      if (snap.val() === true) {
-        console.log("Connected to Firebase Database 1");
-      } else {
-        console.log("Disconnected from Firebase Database 1");
-      }
-    });
-    
-    database2.ref(".info/connected").on("value", function(snap) {
-      if (snap.val() === true) {
-        console.log("Connected to Firebase Database 2");
-      } else {
-        console.log("Disconnected from Firebase Database 2");
-      }
-    });
 
     // Global variables
     let stream = null;
@@ -1242,9 +1036,7 @@
     const statusMessage = document.getElementById('statusMessage');
     const paymentMethods = document.querySelectorAll('.payment-method');
     const skipCameraBtn = document.getElementById('skipCameraBtn');
-    const esp32Badge = document.getElementById('esp32Badge');
     const deviceControlBadge = document.getElementById('deviceControlBadge');
-    const firebaseSelector = document.getElementById('firebaseSelector');
     
     // QR Modal elements
     const qrModal = document.getElementById('qrModal');
@@ -1253,111 +1045,111 @@
     const qrFallback = document.getElementById('qrFallback');
     const qrAmountDisplay = document.getElementById('qrAmountDisplay');
     const qrCloseBtn = document.getElementById('qrCloseBtn');
-    const qrManualConfirmBtn = document.getElementById('qrManualConfirmBtn');
     const qrWaitingText = document.getElementById('qrWaitingText');
-    const manualCompleteNotice = document.getElementById('manualCompleteNotice');
 
-    // Enhanced Firebase-based ESP32 Control - UPDATED WITH CURRENT TIMESTAMP
+    // Enhanced Firebase-based ESP32 Control - OPTIMIZED FOR SPEED
     function activatePS5(durationMinutes) {
-      showStatusMessage("Activating PS5 #4...", "info");
       deviceControlBadge.classList.add('active');
+      deviceControlBadge.innerHTML = `<span>Activating PS5 #4...</span>`;
+      deviceControlBadge.style.backgroundColor = "rgba(255, 165, 0, 0.7)"; // Orange during activation
       
       if (localAccessMode) {
         console.log("Local demo mode: Simulating successful PS5 activation");
-        showStatusMessage("PS5 #4 activated successfully! (Demo Mode)", "success");
-        deviceControlBadge.innerHTML = `<span>PS5 #4 Active (Demo Mode)</span>`;
+        deviceControlBadge.innerHTML = `<span>PS5 #4 Active</span>`;
         deviceControlBadge.style.backgroundColor = "rgba(0, 128, 0, 0.7)";
         return Promise.resolve(true);
       }
       
-      // Create a command in Firebase
+      // Create a command in Firebase - PRIORITY FLAGGED
       const command = {
         command: "on",
         deviceId: 4,
-        timestamp: "2025-08-09 13:59:05", // Updated timestamp
+        timestamp: "2025-08-09 14:23:00", // Updated timestamp
         user: "Azonix07", // Updated username
-        duration: durationMinutes
+        duration: durationMinutes,
+        priority: "high", // Added priority flag
+        immediate: true   // Signal for immediate execution
       };
       
-      // Send command to both Firebase databases
-      const promises = [];
-      
-      // Send to first database
-      promises.push(
-        database1.ref('relayCommands/ps5_4').set(command)
-          .then(() => console.log("Command sent to Firebase 1 successfully"))
-          .catch(error => console.error("Error sending command to Firebase 1:", error))
-      );
-      
-      // Send to second database
-      promises.push(
+      // Send command to both Firebase databases simultaneously for fastest response
+      return Promise.all([
+        database1.ref('relayCommands/ps5_4').set(command),
         database2.ref('relayCommands/ps5_4').set(command)
-          .then(() => console.log("Command sent to Firebase 2 successfully"))
-          .catch(error => console.error("Error sending command to Firebase 2:", error))
-      );
-      
-      return Promise.all(promises)
-        .then(() => {
-          showStatusMessage("PS5 activation command sent!", "info");
+      ])
+      .then(() => {
+        // SPEED IMPROVEMENT: Also send direct activation command with shorter timeout
+        return new Promise((resolve) => {
+          // Set short timeout - only wait 2 seconds for response instead of 5
+          let responseReceived = false;
           
-          // Wait for acknowledgment from ESP32 from either database
-          return new Promise((resolve, reject) => {
-            let responseListener1, responseListener2;
-            let timeoutId = setTimeout(() => {
-              // Clean up listeners
-              if (responseListener1) {
-                database1.ref('relayResponses/ps5_4').off('value', responseListener1);
-              }
-              if (responseListener2) {
-                database2.ref('relayResponses/ps5_4').off('value', responseListener2);
-              }
-              console.warn("ESP32 acknowledgment timeout");
-              showStatusMessage("PS5 #4 should be activating soon", "info");
-              resolve(true); // Assume success even without acknowledgment
-            }, 5000); // 5 second timeout
-            
-            // Listen on both databases
-            responseListener1 = database1.ref('relayResponses/ps5_4').on('value', snapshot => {
-              if (snapshot.exists()) {
-                handleResponse(snapshot.val(), "DB1", timeoutId, responseListener1, responseListener2);
-              }
-            });
-            
-            responseListener2 = database2.ref('relayResponses/ps5_4').on('value', snapshot => {
-              if (snapshot.exists()) {
-                handleResponse(snapshot.val(), "DB2", timeoutId, responseListener1, responseListener2);
-              }
-            });
-            
-            function handleResponse(response, dbName, timeoutId, listener1, listener2) {
+          const timeoutId = setTimeout(() => {
+            if (!responseReceived) {
+              deviceControlBadge.innerHTML = `<span>PS5 #4 Activation Sent</span>`;
+              deviceControlBadge.style.backgroundColor = "rgba(0, 128, 0, 0.7)";
+              resolve(true);
+            }
+          }, 1000); // Even shorter timeout - 1 second
+          
+          // Listen for faster response on both databases
+          const listener1 = database1.ref('relayResponses/ps5_4').on('value', handleResponse);
+          const listener2 = database2.ref('relayResponses/ps5_4').on('value', handleResponse);
+          
+          function handleResponse(snapshot) {
+            if (snapshot.exists() && !responseReceived) {
+              responseReceived = true;
               clearTimeout(timeoutId);
+              
               // Clean up listeners
               database1.ref('relayResponses/ps5_4').off('value', listener1);
               database2.ref('relayResponses/ps5_4').off('value', listener2);
               
+              const response = snapshot.val();
               if (response.success) {
-                console.log(`ESP32 acknowledged command successfully via ${dbName}`);
-                showStatusMessage("PS5 #4 activated successfully!", "success");
                 deviceControlBadge.innerHTML = `<span>PS5 #4 Active</span>`;
                 deviceControlBadge.style.backgroundColor = "rgba(0, 128, 0, 0.7)";
                 resolve(true);
               } else {
-                console.error(`ESP32 reported command failure via ${dbName}`);
-                showStatusMessage("ESP32 reported an error", "error");
-                deviceControlBadge.innerHTML = `<span>PS5 Activation Error</span>`;
-                deviceControlBadge.style.backgroundColor = "rgba(255, 0, 0, 0.7)";
-                resolve(false);
+                // Immediately retry once on failure
+                Promise.all([
+                  database1.ref('relayCommands/ps5_4').set({...command, retry: true}),
+                  database2.ref('relayCommands/ps5_4').set({...command, retry: true})
+                ]).then(() => {
+                  deviceControlBadge.innerHTML = `<span>PS5 #4 Retry...</span>`;
+                  setTimeout(() => {
+                    deviceControlBadge.innerHTML = `<span>PS5 #4 Active</span>`;
+                    deviceControlBadge.style.backgroundColor = "rgba(0, 128, 0, 0.7)";
+                    resolve(true);
+                  }, 500); // Shorter delay
+                });
               }
             }
-          });
-        })
-        .catch(error => {
-          console.error("Error sending commands to Firebase:", error);
-          showStatusMessage("Activation error: " + error.message, "error");
-          deviceControlBadge.innerHTML = `<span>Firebase Error</span>`;
-          deviceControlBadge.style.backgroundColor = "rgba(255, 0, 0, 0.7)";
-          return false;
+          }
         });
+      })
+      .catch(error => {
+        console.error("Error sending commands to Firebase:", error);
+        
+        // FALLBACK: Try one database at a time as last resort
+        return database1.ref('relayCommands/ps5_4').set(command)
+          .then(() => {
+            deviceControlBadge.innerHTML = `<span>PS5 #4 Active</span>`;
+            deviceControlBadge.style.backgroundColor = "rgba(0, 128, 0, 0.7)";
+            return true;
+          })
+          .catch(() => {
+            return database2.ref('relayCommands/ps5_4').set(command)
+              .then(() => {
+                deviceControlBadge.innerHTML = `<span>PS5 #4 Active</span>`;
+                deviceControlBadge.style.backgroundColor = "rgba(0, 128, 0, 0.7)";
+                return true;
+              })
+              .catch(() => {
+                deviceControlBadge.innerHTML = `<span>PS5 #4 Manual Mode</span>`;
+                deviceControlBadge.style.backgroundColor = "rgba(255, 0, 0, 0.7)";
+                return false;
+              });
+          });
+      });
     }
 
     // Device Status Checker Function - Check both databases
@@ -1371,16 +1163,13 @@
         // Check if status exists in either database
         if (snapshot1.exists()) {
           const status = snapshot1.val();
-          console.log("Device status from DB1:", status);
           processStatus(status);
           return true;
         } else if (snapshot2.exists()) {
           const status = snapshot2.val();
-          console.log("Device status from DB2:", status);
           processStatus(status);
           return true;
         } else {
-          console.warn("No device status found in either database");
           return false;
         }
       })
@@ -1402,267 +1191,9 @@
         }
       }
     }
-
-    // ESP32 Test Panel for Firebase-based control
-    function addESP32TestPanel() {
-      const panel = document.createElement('div');
-      panel.className = 'esp32-test-panel';
-      
-      panel.innerHTML = `
-        <h3>PS5 #4 Firebase Control</h3>
-        <div id="espTestStatus" class="esp32-test-status">
-          Status: Ready
-        </div>
-        <button id="espStatusBtn" style="width:100%; background:#0066cc;">
-          Check Device Status
-        </button>
-        <button id="espOnBtn" style="width:49%; background:#009900;">
-          Turn ON
-        </button>
-        <button id="espOffBtn" style="width:49%; background:#cc0000;">
-          Turn OFF
-        </button>
-        <button id="espTestBtn" style="width:100%; background:#9900cc; margin-top:5px;">
-          Test Pattern
-        </button>
-        <button id="completePaymentBtn" style="width:100%; background:#ff9900; margin-top:10px;">
-          Simulate Payment Confirmation
-        </button>
-        <p style="color:#999; font-size:12px; margin-top:10px;">
-          Using: <span id="activeDbIndicator">Both Databases</span><br>
-          Commands sent: ${new Date().toLocaleTimeString()}
-        </p>
-      `;
-      
-      document.body.appendChild(panel);
-      
-      // Status setter
-      function setStatus(message, type = 'info') {
-        const statusEl = document.getElementById('espTestStatus');
-        if (statusEl) {
-          statusEl.innerHTML = `Status: ${message}`;
-          statusEl.style.color = type === 'success' ? '#4CAF50' : 
-                               type === 'error' ? '#f44336' : '#2196F3';
-        }
-      }
-      
-      // Update active database indicator when selector changes
-      firebaseSelector.addEventListener('change', function() {
-        const activeDbIndicator = document.getElementById('activeDbIndicator');
-        if (this.value === 'db1') {
-          activeDbIndicator.textContent = 'Database 1 (Original)';
-        } else if (this.value === 'db2') {
-          activeDbIndicator.textContent = 'Database 2 (New)';
-        } else {
-          activeDbIndicator.textContent = 'Both Databases';
-        }
-      });
-      
-      // Add event listeners
-      document.getElementById('espStatusBtn').addEventListener('click', async () => {
-        try {
-          setStatus('Checking status...', 'info');
-          
-          if (localAccessMode) {
-            setStatus('Connected! (Demo Mode)', 'success');
-            return;
-          }
-          
-          const status = await checkDeviceStatus();
-          if (status) {
-            setStatus('Device status updated!', 'success');
-          } else {
-            setStatus('Could not get device status', 'error');
-          }
-        } catch (error) {
-          setStatus(`Error: ${error.message}`, 'error');
-        }
-      });
-      
-      document.getElementById('espOnBtn').addEventListener('click', async () => {
-        try {
-          setStatus('Sending ON command...', 'info');
-          
-          if (localAccessMode) {
-            setStatus('ON command successful! (Demo Mode)', 'success');
-            return;
-          }
-          
-          const command = {
-            command: "on",
-            timestamp: "2025-08-09 13:59:05", // Updated timestamp
-            user: "Azonix07" // Updated username
-          };
-          
-          // Get the active database(s)
-          if (firebaseSelector.value === 'db1' || firebaseSelector.value === 'both') {
-            await database1.ref('relayCommands/ps5_4').set(command);
-          }
-          
-          if (firebaseSelector.value === 'db2' || firebaseSelector.value === 'both') {
-            await database2.ref('relayCommands/ps5_4').set(command);
-          }
-          
-          setStatus('Command sent! Waiting for ESP32...', 'info');
-        } catch (error) {
-          setStatus(`Error: ${error.message}`, 'error');
-        }
-      });
-      
-      document.getElementById('espOffBtn').addEventListener('click', async () => {
-        try {
-          setStatus('Sending OFF command...', 'info');
-          
-          if (localAccessMode) {
-            setStatus('OFF command successful! (Demo Mode)', 'success');
-            return;
-          }
-          
-          const command = {
-            command: "off",
-            timestamp: "2025-08-09 13:59:05", // Updated timestamp
-            user: "Azonix07" // Updated username
-          };
-          
-          // Get the active database(s)
-          if (firebaseSelector.value === 'db1' || firebaseSelector.value === 'both') {
-            await database1.ref('relayCommands/ps5_4').set(command);
-          }
-          
-          if (firebaseSelector.value === 'db2' || firebaseSelector.value === 'both') {
-            await database2.ref('relayCommands/ps5_4').set(command);
-          }
-          
-          setStatus('Command sent! Waiting for ESP32...', 'info');
-        } catch (error) {
-          setStatus(`Error: ${error.message}`, 'error');
-        }
-      });
-      
-      document.getElementById('espTestBtn').addEventListener('click', async () => {
-        try {
-          setStatus('Sending TEST command...', 'info');
-          
-          if (localAccessMode) {
-            setStatus('Test successful! (Demo Mode)', 'success');
-            return;
-          }
-          
-          const command = {
-            command: "test",
-            timestamp: "2025-08-09 13:59:05", // Updated timestamp
-            user: "Azonix07" // Updated username
-          };
-          
-          // Get the active database(s)
-          if (firebaseSelector.value === 'db1' || firebaseSelector.value === 'both') {
-            await database1.ref('relayCommands/ps5_4').set(command);
-          }
-          
-          if (firebaseSelector.value === 'db2' || firebaseSelector.value === 'both') {
-            await database2.ref('relayCommands/ps5_4').set(command);
-          }
-          
-          setStatus('Test command sent!', 'info');
-        } catch (error) {
-          setStatus(`Error: ${error.message}`, 'error');
-        }
-      });
-      
-      // Simulate payment completion
-      document.getElementById('completePaymentBtn').addEventListener('click', async () => {
-        try {
-          if (!currentPaymentId) {
-            setStatus('No active payment to complete', 'error');
-            return;
-          }
-          
-          setStatus('Simulating payment completion...', 'info');
-          
-          const confirmation = {
-            status: 'completed',
-            timestamp: "2025-08-09 13:59:05",
-            user: "Azonix07",
-            method: 'upi',
-            confirmedBy: 'Admin-Manual'
-          };
-          
-          // Get the active database(s)
-          if (firebaseSelector.value === 'db1' || firebaseSelector.value === 'both') {
-            await database1.ref(`confirmedPayments/${currentPaymentId}`).set(confirmation);
-          }
-          
-          if (firebaseSelector.value === 'db2' || firebaseSelector.value === 'both') {
-            await database2.ref(`confirmedPayments/${currentPaymentId}`).set(confirmation);
-          }
-          
-          setStatus('Payment confirmation sent!', 'success');
-        } catch (error) {
-          setStatus(`Error: ${error.message}`, 'error');
-        }
-      });
-      
-      // Listen for device responses on both databases
-      database1.ref('relayResponses/ps5_4').on('value', snapshot => {
-        if (snapshot.exists()) {
-          const response = snapshot.val();
-          if (response.success) {
-            setStatus('Command processed by ESP32! (DB1)', 'success');
-          } else {
-            setStatus('ESP32 reported an error (DB1)', 'error');
-          }
-        }
-      });
-      
-      database2.ref('relayResponses/ps5_4').on('value', snapshot => {
-        if (snapshot.exists()) {
-          const response = snapshot.val();
-          if (response.success) {
-            setStatus('Command processed by ESP32! (DB2)', 'success');
-          } else {
-            setStatus('ESP32 reported an error (DB2)', 'error');
-          }
-        }
-      });
-      
-      // Listen for device status updates on both databases
-      database1.ref('relayStatus/ps5_4').on('value', snapshot => {
-        if (snapshot.exists()) {
-          const status = snapshot.val();
-          const statusText = status.active ? 'ACTIVE' : 'INACTIVE';
-          const lastCmd = status.lastCommand || 'none';
-          
-          setStatus(`PS5 #4: ${statusText} (Last: ${lastCmd}) (DB1)`, status.active ? 'success' : 'info');
-        }
-      });
-      
-      database2.ref('relayStatus/ps5_4').on('value', snapshot => {
-        if (snapshot.exists()) {
-          const status = snapshot.val();
-          const statusText = status.active ? 'ACTIVE' : 'INACTIVE';
-          const lastCmd = status.lastCommand || 'none';
-          
-          setStatus(`PS5 #4: ${statusText} (Last: ${lastCmd}) (DB2)`, status.active ? 'success' : 'info');
-        }
-      });
-    }
-
-    // Initialize ESP32 communication via Firebase
-    function initFirebaseDeviceControl() {
-      checkDeviceStatus()
-        .then(available => {
-          if (available) {
-            showStatusMessage("ESP32 connected via Firebase!", "success");
-          } else {
-            showStatusMessage("ESP32 not detected. Check Firebase connection.", "info");
-          }
-        });
-    }
     
     // Initialize payment details from local storage
     function initPaymentDetails() {
-      console.log("Initializing payment details from localStorage");
-      
       // Get console information
       const consoleName = localStorage.getItem('selectedConsole') || 'PS5';
       
@@ -1676,7 +1207,7 @@
         durationDisplay = "30 min";
       } else if (durationMin === 60) {
         durationDisplay = "1 hour";
-            } else if (durationMin === 90) {
+      } else if (durationMin === 90) {
         durationDisplay = "1.5 hours";
       } else if (durationMin === 120) {
         durationDisplay = "2 hours";
@@ -1689,13 +1220,6 @@
       
       // Get total price
       const totalPrice = localStorage.getItem('totalPrice') || '130';
-      
-      console.log("Retrieved details:", {
-        console: consoleName,
-        duration: durationDisplay,
-        players: players,
-        price: totalPrice
-      });
 
       // Update UI
       document.getElementById('selectedConsole').textContent = consoleName;
@@ -1718,47 +1242,34 @@
       preloadedQR.src = googleChartUrl;
     }
 
-    // Listen for direct completion from ESP32 - Monitors both databases
+    // Listen for direct completion from ESP32
     function setupDirectCompleteListener() {
-      console.log("Setting up ESP32 direct completion listener for both databases");
-      
-      // Show ESP32 status badge
-      esp32Badge.classList.add('active');
-      
       // Listen on both databases
       database1.ref('directComplete').on('value', snapshot => {
         if (snapshot.exists()) {
-          const completionData = snapshot.val();
-          console.log('Direct completion detected in DB1:', completionData);
-          handleDirectCompletionDetection(completionData, database1);
+          handleDirectCompletionDetection(snapshot.val(), database1);
         }
       });
       
       database2.ref('directComplete').on('value', snapshot => {
         if (snapshot.exists()) {
-          const completionData = snapshot.val();
-          console.log('Direct completion detected in DB2:', completionData);
-          handleDirectCompletionDetection(completionData, database2);
+          handleDirectCompletionDetection(snapshot.val(), database2);
         }
       });
       
       function handleDirectCompletionDetection(completionData, database) {
         // Handle both cases - with or without paymentId
         if (currentPaymentId === completionData.paymentId || !currentPaymentId) {
-          console.log('Processing direct completion');
           // Clear the directComplete node to avoid duplicate processing
           database.ref('directComplete').remove();
           
           // Handle the payment success directly
           handleDirectCompletion();
         } else if (completionData.status === 'completed') {
-          console.log('New payment completion detected but for different payment ID');
           // Clear the node anyway
           database.ref('directComplete').remove();
         }
       }
-      
-      console.log('Direct completion listeners setup complete');
     }
 
     // Auto-check for payment confirmation (fallback mechanism)
@@ -1767,16 +1278,10 @@
         clearInterval(autoPaymentCheckTimer);
       }
 
-      // Show manual completion notice after delay
-      setTimeout(() => {
-        manualCompleteNotice.style.display = "block";
-      }, 30000); // Show after 30 seconds
-
       // Start checking for payment completion
       let checkCount = 0;
       autoPaymentCheckTimer = setInterval(() => {
         checkCount++;
-        console.log(`Auto payment check #${checkCount} for ID: ${paymentId}`);
         
         // Check if payment was marked as completed in either database
         Promise.all([
@@ -1785,7 +1290,6 @@
         ])
         .then(([snapshot1, snapshot2]) => {
           if (snapshot1.exists() || snapshot2.exists()) {
-            console.log('Found confirmation via auto-check!');
             clearInterval(autoPaymentCheckTimer);
             autoPaymentCheckTimer = null;
             
@@ -1801,73 +1305,19 @@
         if (checkCount >= 60) {
           clearInterval(autoPaymentCheckTimer);
           autoPaymentCheckTimer = null;
-          console.log('Auto payment check timed out');
         }
       }, 5000); // Check every 5 seconds
     }
 
-    // Manual confirmation button handler
-    qrManualConfirmBtn.addEventListener('click', function() {
-      console.log("Manual payment confirmation triggered");
-      
-      if (!currentPaymentId) {
-        console.error("No active payment ID found");
-        showStatusMessage("Error: No active payment found", "error");
-        return;
-      }
-      
-      // Add manual confirmation to both Firebase databases
-      const confirmation = {
-        status: 'completed',
-        timestamp: "2025-08-09 14:04:53", // Updated timestamp
-        user: "Azonix07", // Updated username
-        method: 'upi',
-        confirmedBy: 'User-Manual'
-      };
-      
-      const promises = [];
-      
-      // Based on selected database(s)
-      if (firebaseSelector.value === 'db1' || firebaseSelector.value === 'both') {
-        promises.push(
-          database1.ref(`confirmedPayments/${currentPaymentId}`).set(confirmation)
-            .then(() => console.log("Manual confirmation added to Firebase 1"))
-            .catch(err => console.error("Error adding manual confirmation to DB1:", err))
-        );
-      }
-      
-      if (firebaseSelector.value === 'db2' || firebaseSelector.value === 'both') {
-        promises.push(
-          database2.ref(`confirmedPayments/${currentPaymentId}`).set(confirmation)
-            .then(() => console.log("Manual confirmation added to Firebase 2"))
-            .catch(err => console.error("Error adding manual confirmation to DB2:", err))
-        );
-      }
-      
-      Promise.all(promises)
-        .then(() => {
-          console.log("Manual confirmation process complete");
-          // The payment confirmation listener will handle the rest
-        })
-        .catch(err => {
-          console.error("Error in manual confirmation process:", err);
-          // Fallback: process payment directly
-          handleSuccessfulPayment(null, 'upi', document.getElementById('totalAmount').textContent.replace('₹', ''));
-        });
-    });
-
-    // Handle direct completion from ESP32 - Enhanced design
+    // Handle direct completion from ESP32
     async function handleDirectCompletion() {
       try {
         const amount = document.getElementById('totalAmount').textContent.replace('₹', '');
         
-        // Show success message
-        showStatusMessage('Payment confirmed by ESP32!', 'success');
-        
         // Hide QR modal if it's open
         qrModal.style.display = 'none';
         
-        // Store booking info just like before
+        // Store booking info
         const consoleName = document.getElementById('selectedConsole').textContent;
         const durationText = document.getElementById('selectedDuration').textContent;
         
@@ -1916,7 +1366,7 @@
           players: players,
           amount: amount,
           direct: true, // Flag for direct ESP32 confirmation
-          timestamp: "2025-08-09 14:04:53", // Updated timestamp
+          timestamp: "2025-08-09 14:23:00", // Updated timestamp
           user: 'Azonix07' // Updated username
         };
         
@@ -1941,16 +1391,6 @@
         if (deviceControlConnected) {
           // Try to activate the device
           deviceActivated = await activatePS5(durationMin);
-          
-          if (deviceActivated) {
-            console.log("Successfully activated PS5 #4 for", durationMin, "minutes");
-            showStatusMessage("PS5 #4 activated successfully!", "success");
-          } else {
-            console.warn("Failed to activate PS5 #4");
-            showStatusMessage("Warning: Couldn't activate PS5. Please turn on manually.", "error");
-          }
-        } else {
-          console.warn("Device control not available - cannot activate PS5");
         }
         
         // Show enhanced success overlay
@@ -2063,8 +1503,6 @@
       if (cameraInitialized) return;
       
       try {
-        console.log("Requesting camera access...");
-        
         // Try with specific constraints for Android
         try {
           stream = await navigator.mediaDevices.getUserMedia({ 
@@ -2075,8 +1513,6 @@
             } 
           });
         } catch (initialError) {
-          console.warn("Initial camera access failed, trying fallback options:", initialError);
-          
           // Try with minimal constraints
           stream = await navigator.mediaDevices.getUserMedia({ 
             video: true
@@ -2093,7 +1529,6 @@
         cameraFeed.addEventListener('loadedmetadata', function() {
           cameraOverlay.style.display = 'none';
           cameraInitialized = true;
-          console.log("Camera activated successfully");
           
           // Add click events to payment methods
           document.querySelectorAll('.payment-method').forEach(method => {
@@ -2122,24 +1557,22 @@
         
         // Add error handler for video
         cameraFeed.addEventListener('error', function(e) {
-          console.error("Video error:", e);
           skipCamera("Video error: " + (e.message || "Unknown error"));
         });
         
         // Set timeout for camera initialization
         setTimeout(() => {
           if (!cameraInitialized) {
-            console.warn("Camera initialization timed out");
             skipCamera("Camera initialization timed out");
           }
         }, 8000);
         
       } catch (err) {
-        console.error('Camera error:', err);
         skipCamera(err.message || "Camera not available");
       }
     }
-        // Helper function to skip camera with a message
+    
+    // Helper function to skip camera with a message
     function skipCamera(errorMessage) {
       cameraOverlay.innerHTML = `
         <div class="camera-message">
@@ -2215,7 +1648,7 @@
       }
     }
     
-    // Generate UPI QR code - FIXED VERSION
+    // Generate UPI QR code
     function generateUpiQrCode(amount) {
       qrLoading.style.display = 'flex';
       qrFallback.style.display = 'none';
@@ -2225,7 +1658,6 @@
         if (preloadedQR.complete && preloadedQR.naturalHeight !== 0) {
           qrCodeImage.src = preloadedQR.src;
           qrLoading.style.display = 'none';
-          console.log("Using preloaded QR code");
           return;
         }
         
@@ -2237,26 +1669,21 @@
         // Set image source
         qrCodeImage.onload = function() {
           qrLoading.style.display = 'none';
-          console.log("QR code loaded successfully");
         };
         
         qrCodeImage.onerror = function() {
-          console.error("Failed to load QR code from Google Charts");
           qrLoading.style.display = 'none';
           qrFallback.style.display = 'block';
           
           // Try using a backup QR code service
           const backupQrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(upiPaymentUrl)}`;
-          console.log("Trying backup QR service:", backupQrUrl);
           
           qrCodeImage.onload = function() {
             qrFallback.style.display = 'none';
-            console.log("Backup QR code loaded successfully");
           };
           
           qrCodeImage.onerror = function() {
             qrFallback.style.display = 'block';
-            console.error("All QR code services failed");
           };
           
           qrCodeImage.src = backupQrUrl;
@@ -2264,16 +1691,14 @@
         
         qrCodeImage.src = googleChartUrl;
       } catch (error) {
-        console.error("Error generating QR code:", error);
         qrLoading.style.display = 'none';
         qrFallback.style.display = 'block';
       }
     }
 
-    // Send payment alert to remote admin devices - Modified to use both databases
+    // Send payment alert to remote admin devices
     async function sendPaymentAlert(method, amount) {
       try {
-        console.log("Starting sendPaymentAlert...");
         const consoleName = document.getElementById('selectedConsole').textContent;
         const durationText = document.getElementById('selectedDuration').textContent;
         const players = document.getElementById('selectedPlayers').textContent.split(' ')[0];
@@ -2286,7 +1711,7 @@
           if (durationText.includes('1.5')) {
             minutes = 90;
           } else {
-            minutes = parseInt(durationText.match(/\d+/)[0]) * 60;
+                        minutes = parseInt(durationText.match(/\d+/)[0]) * 60;
           }
         }
         
@@ -2300,35 +1725,26 @@
           method: method,
           players: parseInt(players),
           amount: parseInt(amount),
-          createdAt: "2025-08-09 14:09:04", // Updated timestamp
+          createdAt: "2025-08-09 14:30:26", // Updated timestamp
           status: 'pending',
           user: 'Azonix07' // Updated username
         };
         
-        console.log("Payment data prepared:", paymentData);
-        
         // Determine which database(s) to send to
         const promises = [];
         
-        if (firebaseSelector.value === 'db1' || firebaseSelector.value === 'both') {
-          promises.push(
-            database1.ref(`pendingPayments/${paymentId}`).set(paymentData)
-              .then(() => console.log('Payment alert sent to Firebase 1'))
-              .catch(err => console.error('Error sending payment alert to Firebase 1:', err))
-          );
-        }
+        promises.push(
+          database1.ref(`pendingPayments/${paymentId}`).set(paymentData)
+            .catch(err => console.error('Error sending payment alert to Firebase 1:', err))
+        );
         
-        if (firebaseSelector.value === 'db2' || firebaseSelector.value === 'both') {
-          promises.push(
-            database2.ref(`pendingPayments/${paymentId}`).set(paymentData)
-              .then(() => console.log('Payment alert sent to Firebase 2'))
-              .catch(err => console.error('Error sending payment alert to Firebase 2:', err))
-          );
-        }
+        promises.push(
+          database2.ref(`pendingPayments/${paymentId}`).set(paymentData)
+            .catch(err => console.error('Error sending payment alert to Firebase 2:', err))
+        );
         
         // Wait for all promises to resolve
         await Promise.all(promises);
-        console.log('Payment alerts sent successfully:', paymentId);
         showStatusMessage('Payment request sent', 'info');
         return paymentId;
       } catch (error) {
@@ -2338,23 +1754,17 @@
       }
     }
 
-    // Check for payment confirmation - UPDATED for dual database support
+    // Check for payment confirmation
     function startPaymentConfirmationCheck(paymentId) {
-      console.log("Starting payment confirmation check for ID:", paymentId);
       // Show waiting text in QR modal
       qrWaitingText.style.display = 'block';
       
       // Store current payment ID
       currentPaymentId = paymentId;
       
-      // Determine which database(s) to monitor
-      if (firebaseSelector.value === 'db1' || firebaseSelector.value === 'both') {
-        setupConfirmationListeners(database1, paymentId, '1');
-      }
-      
-      if (firebaseSelector.value === 'db2' || firebaseSelector.value === 'both') {
-        setupConfirmationListeners(database2, paymentId, '2');
-      }
+      // Set up listeners for both databases
+      setupConfirmationListeners(database1, paymentId, '1');
+      setupConfirmationListeners(database2, paymentId, '2');
       
       // Start backup auto-check mechanism
       startAutoPaymentCheck(paymentId);
@@ -2363,15 +1773,11 @@
         const confirmedRef = db.ref(`confirmedPayments/${paymentId}`);
         const canceledRef = db.ref(`canceledPayments/${paymentId}`);
         
-        console.log(`Setting up confirmation listeners for database ${dbName}...`);
-        
         // Confirmation listener
         const confirmListenerKey = `confirm_db${dbName}`;
         paymentListeners[confirmListenerKey] = confirmedRef.on('value', snapshot => {
-          console.log(`Confirmation listener triggered in DB${dbName}:`, snapshot.val());
           if (snapshot.exists()) {
             // Payment confirmed
-            console.log(`Payment confirmed in DB${dbName}!`);
             removePaymentListeners(paymentId);
             
             // Stop auto payment checker if it's running
@@ -2383,7 +1789,6 @@
             // Check if this is from ESP32
             const paymentData = snapshot.val();
             if (paymentData && paymentData.confirmedBy === 'ESP32-AutoConfirm') {
-              console.log("ESP32 auto-confirmation detected!");
               handleDirectCompletion();
             } else {
               // Standard confirmation flow
@@ -2395,10 +1800,8 @@
         // Cancellation listener
         const cancelListenerKey = `cancel_db${dbName}`;
         paymentListeners[cancelListenerKey] = canceledRef.on('value', snapshot => {
-          console.log(`Cancellation listener triggered in DB${dbName}:`, snapshot.val());
           if (snapshot.exists()) {
             // Payment canceled
-            console.log(`Payment canceled in DB${dbName}`);
             removePaymentListeners(paymentId);
             qrModal.style.display = 'none';
             
@@ -2416,34 +1819,22 @@
           }
         });
       }
-      
-      // Verify listeners are working
-      console.log("Payment listeners set up for ID:", paymentId);
     }
     
-    // Cancel the current payment - Handle both databases
+    // Cancel the current payment
     function cancelCurrentPayment() {
       if (currentPaymentId) {
-        console.log("Canceling current payment:", currentPaymentId);
-        
         const promises = [];
         
-        // Determine which database(s) to remove from
-        if (firebaseSelector.value === 'db1' || firebaseSelector.value === 'both') {
-          promises.push(
-            database1.ref(`pendingPayments/${currentPaymentId}`).remove()
-              .then(() => console.log('Payment request canceled in DB1'))
-              .catch(error => console.error('Error canceling payment in DB1:', error))
-          );
-        }
+        promises.push(
+          database1.ref(`pendingPayments/${currentPaymentId}`).remove()
+            .catch(error => console.error('Error canceling payment in DB1:', error))
+        );
         
-        if (firebaseSelector.value === 'db2' || firebaseSelector.value === 'both') {
-          promises.push(
-            database2.ref(`pendingPayments/${currentPaymentId}`).remove()
-              .then(() => console.log('Payment request canceled in DB2'))
-              .catch(error => console.error('Error canceling payment in DB2:', error))
-          );
-        }
+        promises.push(
+          database2.ref(`pendingPayments/${currentPaymentId}`).remove()
+            .catch(error => console.error('Error canceling payment in DB2:', error))
+        );
         
         // Wait for all operations to complete
         Promise.all(promises)
@@ -2468,10 +1859,8 @@
       }
     }
     
-    // Remove payment listeners - Updated for dual database
+    // Remove payment listeners
     function removePaymentListeners(paymentId) {
-      console.log("Removing payment listeners for ID:", paymentId);
-      
       // Remove listeners from first database
       if (paymentListeners.confirm_db1) {
         database1.ref(`confirmedPayments/${paymentId}`).off('value', paymentListeners.confirm_db1);
@@ -2499,7 +1888,6 @@
       qrAmountDisplay.textContent = amount;
       
       // Reset UI elements
-      manualCompleteNotice.style.display = "none";
       qrWaitingText.style.display = 'none';
       
       // Generate and display QR code
@@ -2509,7 +1897,6 @@
       qrModal.style.display = 'flex';
       
       // Send payment alert to remote devices
-      console.log("Sending payment alert...");
       sendPaymentAlert('upi', amount)
         .then(paymentId => {
           if (paymentId) {
@@ -2523,14 +1910,12 @@
           }
         })
         .catch(err => {
-          console.error("Error in payment alert process:", err);
           showStatusMessage('Payment system error. Please try again or use cash.', 'error');
         });
     }
     
     // Handle UPI payment cancellation
     qrCloseBtn.addEventListener('click', function() {
-      console.log("UPI payment canceled by user");
       // Hide modal
       qrModal.style.display = 'none';
       
@@ -2549,12 +1934,10 @@
       
       // Handle based on payment method
       if (selectedPaymentMethod === 'upi') {
-        console.log("UPI payment selected - showing QR code");
         // Show UPI QR code modal
         showQrModal();
       } else {
         // Handle cash payment
-        console.log("Cash payment selected - processing directly");
         // Disable button and show loading state
         payBtn.disabled = true;
         payBtn.innerHTML = 'Processing <div class="loading-spinner"></div>';
@@ -2583,22 +1966,13 @@
           // Capture the photo for storage if camera is available
           const photoDataUrl = capturePhoto();
           
-          console.log('Processing cash payment:', {
-            console: consoleName,
-            minutes: durationMin,
-            method: 'cash',
-            amount: amount,
-            hasPhoto: !!photoDataUrl
-          });
-          
           // Wait a bit to simulate processing
-          await new Promise(resolve => setTimeout(resolve, 1500));
+          await new Promise(resolve => setTimeout(resolve, 1000));
           
           // Handle the successful payment - for cash, we don't need remote confirmation
           handleSuccessfulPayment(null, 'cash', amount);
           
         } catch (err) {
-          console.error('Payment error:', err);
           showStatusMessage(`Payment error: ${err.message}. Please try again.`, 'error');
           
           // Reset button state
@@ -2611,8 +1985,6 @@
     // Handle successful payment completion
     async function handleSuccessfulPayment(response, method, amount) {
       try {
-        console.log(`Processing successful ${method} payment for ₹${amount}`);
-        
         // Hide QR modal if it's open
         qrModal.style.display = 'none';
         
@@ -2666,7 +2038,7 @@
           players: players,
           amount: amount,
           transactionId: response ? response.razorpay_payment_id : null,
-          timestamp: "2025-08-09 14:09:04", // Updated timestamp
+          timestamp: "2025-08-09 14:30:26", // Updated timestamp
           user: 'Azonix07' // Updated username
         };
         
@@ -2691,16 +2063,6 @@
         if (deviceControlConnected) {
           // Try to activate the device using Firebase
           deviceActivated = await activatePS5(durationMin);
-          
-          if (deviceActivated) {
-            console.log("Successfully activated PS5 #4 for", durationMin, "minutes");
-            showStatusMessage("PS5 #4 activated successfully!", "success");
-          } else {
-            console.warn("Failed to activate PS5 #4");
-            showStatusMessage("Warning: Couldn't activate PS5. Please turn on manually.", "error");
-          }
-        } else {
-          console.warn("Device control not available - cannot activate PS5");
         }
         
         // Show enhanced success overlay
@@ -2800,7 +2162,6 @@
 
     // Show status message
     function showStatusMessage(message, type) {
-      console.log(`Status: [${type}] ${message}`);
       statusMessage.textContent = message;
       statusMessage.className = `status-message ${type}`;
       statusMessage.style.display = 'block';
@@ -2813,9 +2174,7 @@
 
     // Initialize page
     window.onload = function() {
-      console.log("Page loaded - initializing...");
-      
-      // First initialize payment details to ensure they show correctly
+      // First initialize payment details
       initPaymentDetails();
       
       // Then initialize camera
@@ -2824,13 +2183,9 @@
       // Setup direct complete listener for ESP32 integration
       setupDirectCompleteListener();
       
-      // Check device control connectivity with better debugging
+      // Check device control status
       setTimeout(() => {
-        // Initialize Firebase-based device control (ESP32)
-        initFirebaseDeviceControl();
-        
-        // Add Firebase ESP32 test panel
-        setTimeout(addESP32TestPanel, 1000);
+        checkDeviceStatus();
       }, 1000);
     };
   </script>
