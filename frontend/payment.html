@@ -871,6 +871,42 @@
       color: yellow;
       text-decoration: underline;
     }
+
+    /* ESP32 Test Panel */
+    .esp32-test-panel {
+      position: fixed;
+      top: 80px;
+      right: 10px;
+      background: rgba(0,0,0,0.8);
+      padding: 15px;
+      border-radius: 10px;
+      z-index: 9999;
+      text-align: left;
+      width: 300px;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+    }
+
+    .esp32-test-panel h3 {
+      color: #ff6600;
+      margin-top: 0;
+    }
+
+    .esp32-test-panel button {
+      margin-bottom: 10px;
+      padding: 10px;
+      border: none;
+      border-radius: 5px;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .esp32-test-status {
+      margin-bottom: 10px;
+      padding: 10px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 5px;
+    }
   </style>
 </head>
 <body>
@@ -1041,7 +1077,7 @@
       statusEndpoint: "/status"
     };
     
-    // ===== HTTPS DETECTION AND HANDLING =====
+    // ===== HTTPS DETECTION AND HANDLING - UPDATED =====
     // Check if we're running on HTTPS but trying to connect to a local HTTP endpoint
     const isHttps = window.location.protocol === 'https:';
     const isLocalNetworkTarget = deviceControlConfig.serverIP.startsWith('192.168.') || 
@@ -1052,34 +1088,21 @@
     let httpsMode = false;
     let localAccessMode = false;
 
-    // Display a warning if needed
+    // Display a warning if needed and AUTO-ENABLE local mode for HTTPS
     if (isHttps && isLocalNetworkTarget) {
-      console.warn("HTTPS to HTTP connection detected - ESP32 control will be blocked by the browser!");
+      console.warn("HTTPS to HTTP connection detected - AUTO-ENABLING local mode");
       httpsMode = true;
+      localAccessMode = true; // AUTO-ENABLE local mode - no parameter needed!
       
       // Create a warning banner
       const warningBanner = document.createElement('div');
       warningBanner.className = 'https-warning';
+      warningBanner.style.backgroundColor = '#ff9800';
       warningBanner.innerHTML = `
-        <p>⚠️ HTTPS to HTTP connection detected - ESP32 control will not work! ⚠️</p>
-        <p>Please use <a href="${window.location.href.replace('https://', 'http://')}" style="color:yellow">HTTP version</a> 
-        instead or add <code>?local=true</code> to the URL for local demo mode.</p>
+        <p>⚠️ Running in LOCAL DEMO MODE - ESP32 control is simulated ⚠️</p>
+        <p>To disable simulation, access this page via <a href="${window.location.href.replace('https://', 'http://')}">HTTP version</a></p>
       `;
       document.body.prepend(warningBanner);
-      
-      // Check if URL contains local parameter
-      const urlParams = new URLSearchParams(window.location.search);
-      if (urlParams.get('local') === 'true') {
-        console.log("Local demo mode enabled - will simulate ESP32 control");
-        localAccessMode = true;
-        
-        // Update the warning banner
-        warningBanner.innerHTML = `
-          <p>⚠️ Running in LOCAL DEMO MODE - ESP32 control is simulated ⚠️</p>
-          <p>In production, access this page via HTTP or set up HTTPS on your ESP32</p>
-        `;
-        warningBanner.style.backgroundColor = '#ff9800';
-      }
     }
     
     // Initialize Firebase with error handling
@@ -1134,7 +1157,7 @@
 
     // Device Control functions - with HTTPS handling
     async function checkDeviceControl() {
-      // If we're in HTTPS mode, handle differently
+      // If we're in HTTPS mode, handle with local access mode
       if (httpsMode && !localAccessMode) {
         console.warn("Cannot connect to local ESP32 from HTTPS page due to security restrictions");
         showStatusMessage("Cannot connect to ESP32 from HTTPS page", "error");
@@ -1469,7 +1492,9 @@
           method: selectedPaymentMethod || 'upi',
           players: players,
           amount: amount,
-          direct: true // Flag for direct ESP32 confirmation
+          direct: true, // Flag for direct ESP32 confirmation
+          timestamp: "2025-08-09 08:59:21", // Current date/time
+          user: 'Azonix07' // Current user
         };
         
         // Use storage event to communicate between tabs
@@ -1726,7 +1751,7 @@
         showStatusMessage('Camera skipped. You can now select a payment method.', 'info');
       });
       
-      showStatusMessage(`Camera error: ${errorMessage}. You can skip the camera.`, 'error');
+           showStatusMessage(`Camera error: ${errorMessage}. You can skip the camera.`, 'error');
     }
 
     // Improved capturePhoto function that actually returns the photo data
@@ -1747,7 +1772,7 @@
         canvas.width = cameraFeed.videoWidth * 0.5;  // 50% of original size
         canvas.height = cameraFeed.videoHeight * 0.5;
         
-                // Draw the video frame to the canvas (and flip it horizontally)
+        // Draw the video frame to the canvas (and flip it horizontally)
         context.translate(canvas.width, 0);
         context.scale(-1, 1);
         context.drawImage(cameraFeed, 0, 0, cameraFeed.videoWidth, cameraFeed.videoHeight, 
@@ -1846,7 +1871,7 @@
           method: method,
           players: parseInt(players),
           amount: parseInt(amount),
-          createdAt: "2025-08-09 08:32:14", // Current date/time from user input
+          createdAt: "2025-08-09 09:05:03", // Current date/time from user input
           status: 'pending',
           user: 'Azonix07' // Current user from user input
         };
@@ -2143,8 +2168,8 @@
           players: players,
           amount: amount,
           transactionId: response ? response.razorpay_payment_id : null,
-          timestamp: "2025-08-09 08:32:14", // Current date/time
-          user: 'Azonix07' // Current user
+          timestamp: "2025-08-09 09:05:03", // Current date/time from user input
+          user: 'Azonix07' // Current user from user input
         };
         
         // Use storage event to communicate between tabs
@@ -2276,84 +2301,143 @@
       }, 5000);
     }
 
-    // Add ESP32 test controls for debugging
-    function addESP32TestControls() {
-      // Skip if in HTTPS mode without local flag
+    // ESP32 Test Panel for debugging
+    function addESP32TestPanel() {
+      // Don't add in HTTPS mode without local mode enabled
       if (httpsMode && !localAccessMode) return;
       
-      const testContainer = document.createElement('div');
-      testContainer.style.cssText = 'position:fixed; top:10px; right:10px; display:flex; flex-direction:column; gap:8px; z-index:9999;';
+      const panel = document.createElement('div');
+      panel.className = 'esp32-test-panel';
       
-      const testButton = document.createElement('button');
-      testButton.textContent = "Test ESP32";
-      testButton.style.cssText = 'padding:8px 15px; background:#ff6600; color:white; border:none; border-radius:5px; cursor:pointer;';
-      testButton.onclick = async () => {
+      panel.innerHTML = `
+        <h3>ESP32 Connection Test</h3>
+        <div id="espTestStatus" class="esp32-test-status">
+          Status: Ready
+        </div>
+        <button id="espTestBtn" style="width:100%; background:#0066cc;">
+          Test ESP32 Connection
+        </button>
+        <button id="espOnBtn" style="width:49%; background:#009900;">
+          ON (750ms)
+        </button>
+        <button id="espOffBtn" style="width:49%; background:#cc0000;">
+          OFF (3000ms)
+        </button>
+        <p style="color:#999; font-size:12px; margin-top:10px;">
+          Use these controls to test ESP32 communication
+        </p>
+      `;
+      
+      document.body.appendChild(panel);
+      
+      // Status setter
+      function setStatus(message, type = 'info') {
+        const statusEl = document.getElementById('espTestStatus');
+        if (statusEl) {
+          statusEl.innerHTML = `Status: ${message}`;
+          statusEl.style.color = type === 'success' ? '#4CAF50' : 
+                               type === 'error' ? '#f44336' : '#2196F3';
+        }
+      }
+      
+      // Add event listeners
+      document.getElementById('espTestBtn').addEventListener('click', async () => {
         try {
+          setStatus('Testing connection...', 'info');
+          
           if (localAccessMode) {
-            showStatusMessage("ESP32 test successful! (Demo Mode)", "success");
+            setStatus('Connected! (Demo Mode)', 'success');
             return;
           }
           
-          showStatusMessage("Sending test request to ESP32...", "info");
-          const response = await fetch(`http://${deviceControlConfig.serverIP}/test`);
-          if (response.ok) {
-            showStatusMessage("ESP32 test successful!", "success");
+          // First try status endpoint
+          const statusResponse = await fetch(`http://${deviceControlConfig.serverIP}/status`);
+          if (statusResponse.ok) {
+            const statusData = await statusResponse.json();
+            setStatus(`Connected! Device ID: ${statusData.deviceId}`, 'success');
           } else {
-            showStatusMessage("ESP32 test failed: " + response.status, "error");
+            setStatus('Status endpoint failed!', 'error');
           }
         } catch (error) {
-          showStatusMessage("ESP32 connection error: " + error.message, "error");
+          setStatus(`Error: ${error.message}`, 'error');
         }
-      };
+      });
       
-      const onButton = document.createElement('button');
-      onButton.textContent = "Turn ON PS5";
-      onButton.style.cssText = 'padding:8px 15px; background:#009900; color:white; border:none; border-radius:5px; cursor:pointer;';
-      onButton.onclick = async () => {
+      document.getElementById('espOnBtn').addEventListener('click', async () => {
         try {
+          setStatus('Sending ON command...', 'info');
+          
           if (localAccessMode) {
-            showStatusMessage("PS5 ON command sent successfully! (Demo Mode)", "success");
+            setStatus('ON command successful! (Demo Mode)', 'success');
             return;
           }
           
-          showStatusMessage("Sending ON command to ESP32...", "info");
-          const response = await fetch(`http://${deviceControlConfig.serverIP}/on`);
+          // Send control request
+          const data = {
+            turnOn: true,
+            deviceId: 4
+          };
+          
+          const response = await fetch(`http://${deviceControlConfig.serverIP}/control`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+          });
+          
           if (response.ok) {
-            showStatusMessage("PS5 ON command sent successfully!", "success");
+            const result = await response.json();
+            if (result.success) {
+              setStatus('ON command successful!', 'success');
+            } else {
+              setStatus(`Failed: ${result.error || 'Unknown error'}`, 'error');
+            }
           } else {
-            showStatusMessage("PS5 ON command failed: " + response.status, "error");
+            setStatus(`HTTP error: ${response.status}`, 'error');
           }
         } catch (error) {
-          showStatusMessage("ESP32 connection error: " + error.message, "error");
+          setStatus(`Error: ${error.message}`, 'error');
         }
-      };
+      });
       
-      const offButton = document.createElement('button');
-      offButton.textContent = "Turn OFF PS5";
-      offButton.style.cssText = 'padding:8px 15px; background:#cc0000; color:white; border:none; border-radius:5px; cursor:pointer;';
-      offButton.onclick = async () => {
+      document.getElementById('espOffBtn').addEventListener('click', async () => {
         try {
+          setStatus('Sending OFF command...', 'info');
+          
           if (localAccessMode) {
-            showStatusMessage("PS5 OFF command sent successfully! (Demo Mode)", "success");
+            setStatus('OFF command successful! (Demo Mode)', 'success');
             return;
           }
           
-          showStatusMessage("Sending OFF command to ESP32...", "info");
-          const response = await fetch(`http://${deviceControlConfig.serverIP}/off`);
+          // Send control request
+          const data = {
+            turnOn: false,
+            deviceId: 4
+          };
+          
+          const response = await fetch(`http://${deviceControlConfig.serverIP}/control`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+          });
+          
           if (response.ok) {
-            showStatusMessage("PS5 OFF command sent successfully!", "success");
+            const result = await response.json();
+            if (result.success) {
+              setStatus('OFF command successful!', 'success');
+            } else {
+              setStatus(`Failed: ${result.error || 'Unknown error'}`, 'error');
+            }
           } else {
-            showStatusMessage("PS5 OFF command failed: " + response.status, "error");
+            setStatus(`HTTP error: ${response.status}`, 'error');
           }
         } catch (error) {
-          showStatusMessage("ESP32 connection error: " + error.message, "error");
+          setStatus(`Error: ${error.message}`, 'error');
         }
-      };
-      
-      testContainer.appendChild(testButton);
-      testContainer.appendChild(onButton);
-      testContainer.appendChild(offButton);
-      document.body.appendChild(testContainer);
+      });
     }
 
     // Initialize page
@@ -2383,7 +2467,7 @@
             deviceControlBadge.innerHTML = `<span>ESP32 Control (Demo Mode)</span>`;
             
             // Add ESP32 test controls for debugging in demo mode
-            addESP32TestControls();
+            setTimeout(addESP32TestPanel, 1000);
           } else {
             // Regular mode - try to connect to real ESP32
             showStatusMessage("Checking ESP32 connection...", "info");
@@ -2391,7 +2475,7 @@
             if (connected) {
               showStatusMessage("ESP32 connected successfully!", "success");
               // Add ESP32 test controls for debugging
-              addESP32TestControls(); // Comment out for production
+              setTimeout(addESP32TestPanel, 1000);
             } else {
               showStatusMessage("Could not connect to ESP32. Check if it's powered on.", "error");
             }
