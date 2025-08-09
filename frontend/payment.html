@@ -1056,16 +1056,16 @@
   </div>
 
   <script>
-    // Firebase Configuration
+    // Firebase Configuration - UPDATED WITH NEW CREDENTIALS
     const firebaseConfig = {
-      apiKey: "AIzaSyDUIUj6uvUfWVxyHfgLWzahJAelrFqpIEc",
-      authDomain: "gamespotkiosk.firebaseapp.com",
-      databaseURL: "https://gamespotkiosk-default-rtdb.asia-southeast1.firebasedatabase.app", 
-      projectId: "gamespotkiosk",
-      storageBucket: "gamespotkiosk.appspot.com",
-      messagingSenderId: "537976874541",
-      appId: "1:537976874541:web:9e847488e9fc6b78913aa4",
-      measurementId: "G-SGD83SS6D1"
+      apiKey: "AIzaSyA2kmnE1qCIXhW2OT-ELJ0rcWcEGOU8k_I",
+      authDomain: "gamespotkiosk2.firebaseapp.com",
+      databaseURL: "https://gamespotkiosk2-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "gamespotkiosk2",
+      storageBucket: "gamespotkiosk2.firebasestorage.app",
+      messagingSenderId: "298002512298",
+      appId: "1:298002512298:web:6c3b8fc6a60155531d13d3",
+      measurementId: "G-W91C2RX9E7"
     };
     
     // ===== HTTPS DETECTION AND HANDLING - AUTO-ENABLED =====
@@ -1142,7 +1142,7 @@
     const qrCloseBtn = document.getElementById('qrCloseBtn');
     const qrWaitingText = document.getElementById('qrWaitingText');
 
-    // Enhanced Firebase-based ESP32 Control
+    // Enhanced Firebase-based ESP32 Control - UPDATED WITH NEW TIMESTAMP
     function activatePS5(durationMinutes) {
       showStatusMessage("Activating PS5 #4...", "info");
       deviceControlBadge.classList.add('active');
@@ -1159,13 +1159,13 @@
       const command = {
         command: "on",
         deviceId: 4,
-        timestamp: "2025-08-09 10:34:10",
-        user: "Azonix07",
+        timestamp: "2025-08-09 12:07:30", // Updated timestamp
+        user: "Azonix07", // Updated username
         duration: durationMinutes
       };
       
-      // Send command via Firebase (no CORS issues!)
-      return database.ref('deviceCommands/ps5_4').set(command)
+      // Send command via Firebase
+      return database.ref('relayCommands/ps5_4').set(command)
         .then(() => {
           console.log("Command sent to Firebase successfully");
           showStatusMessage("PS5 activation command sent!", "info");
@@ -1175,17 +1175,17 @@
             let responseListener;
             let timeoutId = setTimeout(() => {
               if (responseListener) {
-                database.ref('deviceResponses/ps5_4').off('value', responseListener);
+                database.ref('relayResponses/ps5_4').off('value', responseListener);
               }
               console.warn("ESP32 acknowledgment timeout");
               showStatusMessage("PS5 #4 should be activating soon", "info");
               resolve(true); // Assume success even without acknowledgment
             }, 5000); // 5 second timeout
             
-            responseListener = database.ref('deviceResponses/ps5_4').on('value', snapshot => {
+            responseListener = database.ref('relayResponses/ps5_4').on('value', snapshot => {
               if (snapshot.exists()) {
                 clearTimeout(timeoutId);
-                database.ref('deviceResponses/ps5_4').off('value', responseListener);
+                database.ref('relayResponses/ps5_4').off('value', responseListener);
                 
                 const response = snapshot.val();
                 if (response.success) {
@@ -1216,7 +1216,7 @@
 
     // Device Status Checker Function
     function checkDeviceStatus() {
-      return database.ref('deviceStatus/ps5_4').once('value')
+      return database.ref('relayStatus/ps5_4').once('value')
         .then(snapshot => {
           if (snapshot.exists()) {
             const status = snapshot.val();
@@ -1315,10 +1315,10 @@
           }
           
           // Send command via Firebase
-          await database.ref('deviceCommands/ps5_4').set({
+          await database.ref('relayCommands/ps5_4').set({
             command: "on",
-            timestamp: "2025-08-09 10:34:10",
-            user: "Azonix07"
+            timestamp: "2025-08-09 12:07:30", // Updated timestamp
+            user: "Azonix07" // Updated username
           });
           
           setStatus('Command sent! Waiting for ESP32...', 'info');
@@ -1337,10 +1337,10 @@
           }
           
           // Send command via Firebase
-          await database.ref('deviceCommands/ps5_4').set({
+          await database.ref('relayCommands/ps5_4').set({
             command: "off",
-            timestamp: "2025-08-09 10:34:10",
-            user: "Azonix07"
+            timestamp: "2025-08-09 12:07:30", // Updated timestamp
+            user: "Azonix07" // Updated username
           });
           
           setStatus('Command sent! Waiting for ESP32...', 'info');
@@ -1359,10 +1359,10 @@
           }
           
           // Send command via Firebase
-          await database.ref('deviceCommands/ps5_4').set({
+          await database.ref('relayCommands/ps5_4').set({
             command: "test",
-            timestamp: "2025-08-09 10:34:10",
-            user: "Azonix07"
+            timestamp: "2025-08-09 12:07:30", // Updated timestamp
+            user: "Azonix07" // Updated username
           });
           
           setStatus('Test command sent!', 'info');
@@ -1372,7 +1372,7 @@
       });
       
       // Listen for device responses
-      database.ref('deviceResponses/ps5_4').on('value', snapshot => {
+      database.ref('relayResponses/ps5_4').on('value', snapshot => {
         if (snapshot.exists()) {
           const response = snapshot.val();
           if (response.success) {
@@ -1384,7 +1384,7 @@
       });
       
       // Listen for device status updates
-      database.ref('deviceStatus/ps5_4').on('value', snapshot => {
+      database.ref('relayStatus/ps5_4').on('value', snapshot => {
         if (snapshot.exists()) {
           const status = snapshot.val();
           const statusText = status.active ? 'ACTIVE' : 'INACTIVE';
@@ -1557,8 +1557,8 @@
           players: players,
           amount: amount,
           direct: true, // Flag for direct ESP32 confirmation
-          timestamp: "2025-08-09 10:34:10", // Updated with current date/time
-          user: 'Azonix07' // Updated with current username
+          timestamp: "2025-08-09 12:07:30", // Updated timestamp
+          user: 'Azonix07' // Updated username
         };
         
         // Use storage event to communicate between tabs
@@ -1733,7 +1733,7 @@
           // Add click events to payment methods
           document.querySelectorAll('.payment-method').forEach(method => {
             method.onclick = function() {
-              // Remove selected class from all methods
+                          // Remove selected class from all methods
               document.querySelectorAll('.payment-method').forEach(m => {
                 m.classList.remove('selected');
               });
@@ -1751,7 +1751,8 @@
               showStatusMessage(`Selected payment method: ${selectedPaymentMethod}`, 'info');
             };
           });
-                    showStatusMessage('Camera activated. Select payment method to continue.', 'info');
+          
+          showStatusMessage('Camera activated. Select payment method to continue.', 'info');
         });
         
         // Add error handler for video
@@ -1935,7 +1936,7 @@
           method: method,
           players: parseInt(players),
           amount: parseInt(amount),
-          createdAt: "2025-08-09 10:40:41", // Updated timestamp
+          createdAt: "2025-08-09 12:14:36", // Updated timestamp
           status: 'pending',
           user: 'Azonix07' // Updated username
         };
@@ -2232,7 +2233,7 @@
           players: players,
           amount: amount,
           transactionId: response ? response.razorpay_payment_id : null,
-          timestamp: "2025-08-09 10:40:41", // Updated timestamp
+          timestamp: "2025-08-09 12:14:36", // Updated timestamp
           user: 'Azonix07' // Updated username
         };
         
@@ -2390,4 +2391,3 @@
   </script>
 </body>
 </html>
-          
