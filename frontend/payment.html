@@ -1143,32 +1143,36 @@
     const qrWaitingText = document.getElementById('qrWaitingText');
 
     // Enhanced Firebase-based ESP32 Control - UPDATED WITH NEW TIMESTAMP
-    function activatePS5(durationMinutes) {
-      showStatusMessage("Activating PS5 #4...", "info");
-      deviceControlBadge.classList.add('active');
+// Enhanced Firebase-based ESP32 Control - UPDATED WITH NEW TIMESTAMP
+function activatePS5(durationMinutes) {
+  showStatusMessage("Activating PS5 #4...", "info");
+  deviceControlBadge.classList.add('active');
+  
+  if (localAccessMode) {
+    console.log("Local demo mode: Simulating successful PS5 activation");
+    showStatusMessage("PS5 #4 activated successfully! (Demo Mode)", "success");
+    deviceControlBadge.innerHTML = `<span>PS5 #4 Active (Demo Mode)</span>`;
+    deviceControlBadge.style.backgroundColor = "rgba(0, 128, 0, 0.7)";
+    return Promise.resolve(true);
+  }
+  
+  // Create a command in Firebase
+  const command = {
+    command: "on",
+    deviceId: 4,
+    timestamp: "2025-08-09 12:48:50", // Updated timestamp
+    user: "Azonix07", // Updated username
+    duration: durationMinutes
+  };
+  
+  // Send command via Firebase
+  return database.ref('relayCommands/ps5_4').set(command)
+    .then(() => {
+      console.log("Command sent to Firebase successfully");
+      showStatusMessage("PS5 activation command sent!", "info");
       
-      if (localAccessMode) {
-        console.log("Local demo mode: Simulating successful PS5 activation");
-        showStatusMessage("PS5 #4 activated successfully! (Demo Mode)", "success");
-        deviceControlBadge.innerHTML = `<span>PS5 #4 Active (Demo Mode)</span>`;
-        deviceControlBadge.style.backgroundColor = "rgba(0, 128, 0, 0.7)";
-        return Promise.resolve(true);
-      }
-      
-      // Create a command in Firebase
-      const command = {
-        command: "on",
-        deviceId: 4,
-        timestamp: "2025-08-09 12:34:19", // Updated timestamp
-        user: "Azonix07", // Updated username
-        duration: durationMinutes
-      };
-      
-      // Send command via Firebase
-      return database.ref('relayCommands/ps5_4').set(command)
-        .then(() => {
-          console.log("Command sent to Firebase successfully");
-          showStatusMessage("PS5 activation command sent!", "info");
+      // Rest of the function remains the same
+      // ...
           
           // Wait for acknowledgment from ESP32
           return new Promise((resolve, reject) => {
