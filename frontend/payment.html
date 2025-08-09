@@ -509,6 +509,7 @@
       justify-content: center;
       gap: 15px;
       align-items: center;
+      flex-wrap: wrap;
     }
 
     .qr-close-btn {
@@ -525,6 +526,23 @@
 
     .qr-close-btn:hover {
       background: #888;
+      transform: translateY(-2px);
+    }
+
+    .qr-confirm-btn {
+      padding: 12px 25px;
+      font-size: 1rem;
+      background: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-weight: 600;
+    }
+
+    .qr-confirm-btn:hover {
+      background: #45a049;
       transform: translateY(-2px);
     }
 
@@ -907,6 +925,19 @@
       background: rgba(255,255,255,0.1);
       border-radius: 5px;
     }
+
+    /* Manual confirm button */
+    .manual-complete-notice {
+      display: none;
+      margin-top: 15px;
+      padding: 10px;
+      border-radius: 5px;
+      background-color: rgba(255, 255, 0, 0.2);
+      border: 1px solid rgba(255, 255, 0, 0.4);
+      color: white;
+      font-size: 0.9rem;
+      text-align: center;
+    }
   </style>
 </head>
 <body>
@@ -1032,9 +1063,13 @@
       
       <div class="qr-footer">
         <button id="qrCloseBtn" class="qr-close-btn">Cancel</button>
+        <button id="qrManualConfirmBtn" class="qr-confirm-btn">I've Paid</button>
         <div id="qrWaitingText" style="display: none;">
           <span class="waiting-status">Waiting for payment confirmation</span>
           <div class="loading-spinner" style="display: inline-block; width: 16px; height: 16px; margin-left: 8px; vertical-align: middle;"></div>
+        </div>
+        <div id="manualCompleteNotice" class="manual-complete-notice">
+          If you've already paid and it's not being detected, click "I've Paid"
         </div>
       </div>
     </div>
@@ -1120,6 +1155,7 @@
     let paymentListeners = {};
     let cameraInitialized = false;
     let deviceControlConnected = false;
+    let autoPaymentCheckTimer = null;
     
     // DOM elements
     const cameraFeed = document.getElementById('cameraFeed');
@@ -1140,7 +1176,9 @@
     const qrFallback = document.getElementById('qrFallback');
     const qrAmountDisplay = document.getElementById('qrAmountDisplay');
     const qrCloseBtn = document.getElementById('qrCloseBtn');
+    const qrManualConfirmBtn = document.getElementById('qrManualConfirmBtn');
     const qrWaitingText = document.getElementById('qrWaitingText');
+    const manualCompleteNotice = document.getElementById('manualCompleteNotice');
 
     // Enhanced Firebase-based ESP32 Control - UPDATED WITH CURRENT TIMESTAMP
     function activatePS5(durationMinutes) {
@@ -1159,7 +1197,7 @@
       const command = {
         command: "on",
         deviceId: 4,
-        timestamp: "2025-08-09 13:23:17", // Updated timestamp
+        timestamp: "2025-08-09 13:40:28", // Updated timestamp
         user: "Azonix07", // Updated username
         duration: durationMinutes
       };
@@ -1267,6 +1305,9 @@
         <button id="espTestBtn" style="width:100%; background:#9900cc; margin-top:5px;">
           Test Pattern
         </button>
+        <button id="completePaymentBtn" style="width:100%; background:#ff9900; margin-top:10px;">
+          Simulate Payment Confirmation
+        </button>
         <p style="color:#999; font-size:12px; margin-top:10px;">
           Commands sent via Firebase: ${new Date().toLocaleTimeString()}
         </p>
@@ -1317,7 +1358,7 @@
           // Send command via Firebase
           await database.ref('relayCommands/ps5_4').set({
             command: "on",
-            timestamp: "2025-08-09 13:23:17", // Updated timestamp
+            timestamp: "2025-08-09 13:40:28", // Updated timestamp
             user: "Azonix07" // Updated username
           });
           
@@ -1339,7 +1380,7 @@
           // Send command via Firebase
           await database.ref('relayCommands/ps5_4').set({
             command: "off",
-            timestamp: "2025-08-09 13:23:17", // Updated timestamp
+            timestamp: "2025-08-09 13:40:28", // Updated timestamp
             user: "Azonix07" // Updated username
           });
           
@@ -1361,11 +1402,36 @@
           // Send command via Firebase
           await database.ref('relayCommands/ps5_4').set({
             command: "test",
-            timestamp: "2025-08-09 13:23:17", // Updated timestamp
+            timestamp: "2025-08-09 13:40:28", // Updated timestamp
             user: "Azonix07" // Updated username
           });
           
           setStatus('Test command sent!', 'info');
+        } catch (error) {
+          setStatus(`Error: ${error.message}`, 'error');
+        }
+      });
+      
+      // Simulate payment completion
+      document.getElementById('completePaymentBtn').addEventListener('click', async () => {
+        try {
+          if (!currentPaymentId) {
+            setStatus('No active payment to complete', 'error');
+            return;
+          }
+          
+          setStatus('Simulating payment completion...', 'info');
+          
+          // Add confirmation to Firebase
+          await database.ref(`confirmedPayments/${currentPaymentId}`).set({
+            status: 'completed',
+            timestamp: "2025-08-09 13:40:28",
+            user: "Azonix07",
+            method: 'upi',
+            confirmedBy: 'Admin-Manual'
+          });
+          
+          setStatus('Payment confirmation sent!', 'success');
         } catch (error) {
           setStatus(`Error: ${error.message}`, 'error');
         }
@@ -1478,15 +1544,15 @@
           const completionData = snapshot.val();
           console.log('Direct completion detected:', completionData);
           
-          // Check if this matches our current payment
-          if (currentPaymentId === completionData.paymentId) {
-            console.log('Matching payment ID - processing direct completion');
+          // Handle both cases - with or without paymentId
+          if (currentPaymentId === completionData.paymentId || !currentPaymentId) {
+            console.log('Processing direct completion');
             // Clear the directComplete node to avoid duplicate processing
             database.ref('directComplete').remove();
             
             // Handle the payment success directly
             handleDirectCompletion();
-          } else if (currentPaymentId && completionData.status === 'completed') {
+          } else if (completionData.status === 'completed') {
             console.log('New payment completion detected but for different payment ID');
             // Clear the node anyway
             database.ref('directComplete').remove();
@@ -1496,6 +1562,75 @@
       
       console.log('Direct completion listener setup complete');
     }
+
+    // Auto-check for payment confirmation (fallback mechanism)
+    function startAutoPaymentCheck(paymentId) {
+      if (autoPaymentCheckTimer) {
+        clearInterval(autoPaymentCheckTimer);
+      }
+
+      // Show manual completion notice after delay
+      setTimeout(() => {
+        manualCompleteNotice.style.display = "block";
+      }, 30000); // Show after 30 seconds
+
+      // Start checking for payment completion
+      let checkCount = 0;
+      autoPaymentCheckTimer = setInterval(() => {
+        checkCount++;
+        console.log(`Auto payment check #${checkCount} for ID: ${paymentId}`);
+        
+        // Check if payment was marked as completed
+        database.ref(`confirmedPayments/${paymentId}`).once('value')
+          .then(snapshot => {
+            if (snapshot.exists()) {
+              console.log('Found confirmation via auto-check!');
+              clearInterval(autoPaymentCheckTimer);
+              autoPaymentCheckTimer = null;
+              
+              // Handle the successful payment
+              handleSuccessfulPayment(null, 'upi', document.getElementById('totalAmount').textContent.replace('₹', ''));
+            }
+          })
+          .catch(err => {
+            console.error('Error during auto payment check:', err);
+          });
+        
+        // Stop checking after 5 minutes (60 checks at 5-second intervals)
+        if (checkCount >= 60) {
+          clearInterval(autoPaymentCheckTimer);
+          autoPaymentCheckTimer = null;
+          console.log('Auto payment check timed out');
+        }
+      }, 5000); // Check every 5 seconds
+    }
+
+    // Manual confirmation button handler
+    qrManualConfirmBtn.addEventListener('click', function() {
+      console.log("Manual payment confirmation triggered");
+      
+      if (!currentPaymentId) {
+        console.error("No active payment ID found");
+        showStatusMessage("Error: No active payment found", "error");
+        return;
+      }
+      
+      // Add manual confirmation to Firebase
+      database.ref(`confirmedPayments/${currentPaymentId}`).set({
+        status: 'completed',
+        timestamp: "2025-08-09 13:40:28",
+        user: "Azonix07",
+        method: 'upi',
+        confirmedBy: 'User-Manual'
+      }).then(() => {
+        console.log("Manual confirmation added to Firebase");
+        // The payment confirmation listener will handle the rest
+      }).catch(err => {
+        console.error("Error adding manual confirmation:", err);
+        // Fallback: process payment directly
+        handleSuccessfulPayment(null, 'upi', document.getElementById('totalAmount').textContent.replace('₹', ''));
+      });
+    });
 
     // Handle direct completion from ESP32 - Enhanced design
     async function handleDirectCompletion() {
@@ -1557,7 +1692,7 @@
           players: players,
           amount: amount,
           direct: true, // Flag for direct ESP32 confirmation
-          timestamp: "2025-08-09 13:23:17", // Updated timestamp
+          timestamp: "2025-08-09 13:40:28", // Updated timestamp
           user: 'Azonix07' // Updated username
         };
         
@@ -1594,7 +1729,7 @@
           console.warn("Device control not available - cannot activate PS5");
         }
         
-        // Show enhanced success overlay
+               // Show enhanced success overlay
         const successOverlay = document.createElement('div');
         successOverlay.className = 'success-overlay';
         
@@ -1647,6 +1782,12 @@
         if (currentPaymentId) {
           removePaymentListeners(currentPaymentId);
           currentPaymentId = null;
+        }
+        
+        // Stop auto payment checker if it's running
+        if (autoPaymentCheckTimer) {
+          clearInterval(autoPaymentCheckTimer);
+          autoPaymentCheckTimer = null;
         }
         
         // Redirect to index.html after a delay
@@ -1755,7 +1896,7 @@
           showStatusMessage('Camera activated. Select payment method to continue.', 'info');
         });
         
-                // Add error handler for video
+        // Add error handler for video
         cameraFeed.addEventListener('error', function(e) {
           console.error("Video error:", e);
           skipCamera("Video error: " + (e.message || "Unknown error"));
@@ -1936,7 +2077,7 @@
           method: method,
           players: parseInt(players),
           amount: parseInt(amount),
-          createdAt: "2025-08-09 13:28:41", // Updated timestamp
+          createdAt: "2025-08-09 13:45:10", // Updated timestamp
           status: 'pending',
           user: 'Azonix07' // Updated username
         };
@@ -1984,6 +2125,12 @@
           console.log("Payment confirmed!");
           removePaymentListeners(paymentId);
           
+          // Stop auto payment checker if it's running
+          if (autoPaymentCheckTimer) {
+            clearInterval(autoPaymentCheckTimer);
+            autoPaymentCheckTimer = null;
+          }
+          
           // Check if this is from ESP32
           const paymentData = snapshot.val();
           if (paymentData && paymentData.confirmedBy === 'ESP32-AutoConfirm') {
@@ -2005,6 +2152,12 @@
           removePaymentListeners(paymentId);
           qrModal.style.display = 'none';
           
+          // Stop auto payment checker if it's running
+          if (autoPaymentCheckTimer) {
+            clearInterval(autoPaymentCheckTimer);
+            autoPaymentCheckTimer = null;
+          }
+          
           showStatusMessage('Payment was canceled', 'error');
           payBtn.disabled = false;
           payBtn.innerHTML = 'Pay Now';
@@ -2012,6 +2165,9 @@
           currentPaymentId = null;
         }
       });
+      
+      // Start backup auto-check mechanism
+      startAutoPaymentCheck(paymentId);
       
       // Verify listeners are working
       console.log("Payment listeners set up for ID:", paymentId);
@@ -2027,6 +2183,12 @@
             console.log('Payment request canceled');
             removePaymentListeners(currentPaymentId);
             qrModal.style.display = 'none';
+            
+            // Stop auto payment checker if it's running
+            if (autoPaymentCheckTimer) {
+              clearInterval(autoPaymentCheckTimer);
+              autoPaymentCheckTimer = null;
+            }
             
             showStatusMessage('Payment request canceled', 'info');
             payBtn.disabled = false;
@@ -2060,6 +2222,10 @@
     function showQrModal() {
       const amount = document.getElementById('totalAmount').textContent.replace('₹', '');
       qrAmountDisplay.textContent = amount;
+      
+      // Reset UI elements
+      manualCompleteNotice.style.display = "none";
+      qrWaitingText.style.display = 'none';
       
       // Generate and display QR code
       generateUpiQrCode(amount);
@@ -2099,6 +2265,13 @@
           .then(() => {
             console.log('Payment request canceled by user');
             removePaymentListeners(currentPaymentId);
+            
+            // Stop auto payment checker if it's running
+            if (autoPaymentCheckTimer) {
+              clearInterval(autoPaymentCheckTimer);
+              autoPaymentCheckTimer = null;
+            }
+            
             currentPaymentId = null;
           })
           .catch(error => {
@@ -2233,7 +2406,7 @@
           players: players,
           amount: amount,
           transactionId: response ? response.razorpay_payment_id : null,
-          timestamp: "2025-08-09 13:28:41", // Updated timestamp
+          timestamp: "2025-08-09 13:45:10", // Updated timestamp
           user: 'Azonix07' // Updated username
         };
         
@@ -2325,6 +2498,12 @@
           currentPaymentId = null;
         }
         
+        // Stop auto payment checker if it's running
+        if (autoPaymentCheckTimer) {
+          clearInterval(autoPaymentCheckTimer);
+          autoPaymentCheckTimer = null;
+        }
+        
         // Redirect after a delay
         setTimeout(() => {
           window.location.href = 'index.html';
@@ -2347,6 +2526,12 @@
       if (currentPaymentId) {
         removePaymentListeners(currentPaymentId);
         currentPaymentId = null;
+      }
+      
+      // Stop auto payment checker if it's running
+      if (autoPaymentCheckTimer) {
+        clearInterval(autoPaymentCheckTimer);
+        autoPaymentCheckTimer = null;
       }
       
       // Go back to duration selection
