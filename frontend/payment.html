@@ -1155,77 +1155,24 @@
     const qrCloseBtn = document.getElementById('qrCloseBtn');
     const qrWaitingText = document.getElementById('qrWaitingText');
 
-    // IMPROVED: Safe ESP32 request function with timeout and fallbacks
-    async function safeESP32Request(endpoint, data, maxRetries = 2) {
-      if (httpsMode && !localAccessMode) {
-        console.warn("Cannot connect to ESP32 from HTTPS page due to security restrictions");
-        return { success: false, error: "HTTPS restriction" };
-      }
-      
-      if (localAccessMode) {
-        console.log("Local demo mode: Simulating successful ESP32 request");
-        return { success: true, action: data.turnOn ? "activated" : "deactivated", deviceId: 4 };
-      }
-      
-      // Try multiple times if needed
-      for (let attempt = 0; attempt <= maxRetries; attempt++) {
-        try {
-          console.log(`ESP32 request attempt ${attempt + 1}/${maxRetries + 1}`);
-          
-          // Set timeout for ESP32 request
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 second timeout
-          
-          const response = await fetch(`http://${deviceControlConfig.serverIP}${endpoint}`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(data),
-            signal: controller.signal
-          });
-          
-          clearTimeout(timeoutId);
-          
-          if (response.ok) {
-            try {
-              return await response.json();
-            } catch (jsonError) {
-              console.warn("JSON parse error, but request succeeded:", jsonError);
-              return { success: true, action: data.turnOn ? "activated" : "deactivated", deviceId: 4 };
-            }
-          } else {
-            console.warn(`HTTP error: ${response.status} on attempt ${attempt + 1}`);
-            if (attempt === maxRetries) throw new Error(`HTTP error: ${response.status}`);
-          }
-        } catch (error) {
-          console.error(`ESP32 request error (attempt ${attempt + 1}):`, error);
-          
-          if (error.name === 'AbortError') {
-            console.warn("Request timeout");
-          }
-          
-          // Last attempt - try direct method
-          if (attempt === maxRetries) {
-            // Try direct method as last resort
-            try {
-              console.log("Trying direct method as fallback");
-              if (data.turnOn) {
-                await fetch(`http://${deviceControlConfig.serverIP}/on`);
-                return { success: true, action: "activated", directMethod: true };
-              } else {
-                await fetch(`http://${deviceControlConfig.serverIP}/off`);
-                return { success: true, action: "deactivated", directMethod: true };
-              }
-            } catch (directError) {
-              console.error("Direct method failed:", directError);
-              throw error; // Re-throw original error
-            }
-          }
-          
-          // Wait before retrying
-          await new Promise(resolve => setTimeout(resolve, 500));
+    // FIXED: Enhanced fetch function with CORS handling to fix CORB issues
+    async function fetchWithCORS(url, options = {}) {
+      // Add default CORS options
+      const corsOptions = {
+        ...options,
+        mode: 'cors', // Critical for CORS requests
+        headers: {
+          ...options.headers,
+          'Content-Type': 'application/json'
         }
+      };
+      
+      try {
+        const response = await fetch(url, corsOptions);
+        return response;
+      } catch (error) {
+        console.error(`CORS fetch error to ${url}:`, error);
+        throw error;
       }
     }
 
@@ -1252,7 +1199,8 @@
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 second timeout
         
-        const response = await fetch(`http://${deviceControlConfig.serverIP}/status`, { 
+        // FIXED: Use fetchWithCORS instead of regular fetch
+        const response = await fetchWithCORS(`http://${deviceControlConfig.serverIP}/status`, { 
           signal: controller.signal 
         });
         
@@ -1278,7 +1226,7 @@
       }
     }
 
-    // Enhanced PS5 activation function with better reliability
+    // FIXED: Enhanced PS5 activation function to avoid CORB issues
     async function activatePS5(durationMinutes) {
       showStatusMessage("Attempting to activate PS5 #4...", "info");
       deviceControlBadge.classList.add('active');
@@ -1301,86 +1249,59 @@
         return true;
       }
       
-      if (!deviceControlConnected) {
-        console.warn("Device control server not connected - attempting to connect");
-        try {
-          const connected = await checkDeviceControl();
-          if (!connected) {
-            showStatusMessage("Cannot connect to PS5 controller", "error");
-            return false;
-          }
-        } catch (error) {
-          console.error("Connection error:", error);
-          showStatusMessage("Error connecting to PS5 controller", "error");
-          return false;
-        }
-      }
-      
-      // Add test pulse first to "wake up" the ESP32 if needed
+      // Try several methods in sequence until one works
       try {
-        console.log("Sending wake-up request to ESP32...");
-        await fetch(`http://${deviceControlConfig.serverIP}/test`).catch(() => {});
-        await new Promise(resolve => setTimeout(resolve, 300)); // Brief pause
-      } catch (e) {
-        console.log("Wake-up request failed, continuing anyway:", e);
-      }
-      
-      try {
-        console.log(`Activating PS5 #4 for ${durationMinutes} minutes...`);
+        // Method 1: Try direct GET request to /on endpoint (most reliable)
+        console.log("Trying direct ON endpoint");
+        const response = await fetchWithCORS(`http://${deviceControlConfig.serverIP}/on`);
         
-        // Use improved safe request function
-        const result = await safeESP32Request('/control', {
-          turnOn: true,
-          deviceId: 4
-        });
-        
-        if (result && result.success) {
+        if (response.ok) {
           showStatusMessage("PS5 #4 activated successfully!", "success");
           deviceControlBadge.innerHTML = `<span>PS5 #4 Active</span>`;
           deviceControlBadge.style.backgroundColor = "rgba(0, 128, 0, 0.7)";
           return true;
-        } else {
-          // Try direct method as backup
-          console.warn("Control request failed - trying direct method");
-          showStatusMessage("Trying alternative activation method...", "info");
-          
-          try {
-            const directResponse = await fetch(`http://${deviceControlConfig.serverIP}/on`);
-            if (directResponse.ok) {
-              showStatusMessage("PS5 #4 activated via direct method", "success");
-              deviceControlBadge.innerHTML = `<span>PS5 #4 Active (direct)</span>`;
-              deviceControlBadge.style.backgroundColor = "rgba(0, 128, 0, 0.7)";
-              return true;
-            }
-          } catch (directError) {
-            console.error("Direct activation failed:", directError);
-          }
-          
-          showStatusMessage("All activation methods failed", "error");
-          deviceControlBadge.innerHTML = `<span>PS5 Activation Failed</span>`;
-          deviceControlBadge.style.backgroundColor = "rgba(255, 0, 0, 0.7)";
-          return false;
         }
       } catch (error) {
-        console.error("Error activating PS5:", error);
-        showStatusMessage("Connection error with PS5 controller", "error");
+        console.warn("Direct method failed:", error);
         
-        // Try simpler direct method as last resort
+        // Method 2: Try POST to /control endpoint
         try {
-          const directResponse = await fetch(`http://${deviceControlConfig.serverIP}/on`);
-          if (directResponse.ok) {
-            showStatusMessage("PS5 #4 activated via emergency method", "success");
-            deviceControlBadge.innerHTML = `<span>PS5 #4 Active (emergency)</span>`;
+          console.log("Trying POST to /control endpoint");
+          const controlResponse = await fetchWithCORS(`http://${deviceControlConfig.serverIP}/control`, {
+            method: 'POST',
+            body: JSON.stringify({ turnOn: true, deviceId: 4 })
+          });
+          
+          if (controlResponse.ok) {
+            showStatusMessage("PS5 #4 activated via control endpoint!", "success");
+            deviceControlBadge.innerHTML = `<span>PS5 #4 Active</span>`;
             deviceControlBadge.style.backgroundColor = "rgba(0, 128, 0, 0.7)";
             return true;
           }
-        } catch (lastError) {
-          console.error("Emergency activation failed:", lastError);
-          deviceControlBadge.innerHTML = `<span>PS5 Activation Failed</span>`;
-          deviceControlBadge.style.backgroundColor = "rgba(255, 0, 0, 0.7)";
-          return false;
+        } catch (controlError) {
+          console.warn("Control endpoint failed:", controlError);
+        }
+        
+        // Method 3: Plain GET as last resort
+        try {
+          console.log("Trying simple GET request as final attempt");
+          const simpleResponse = await fetch(`http://${deviceControlConfig.serverIP}/on`);
+          
+          if (simpleResponse.ok) {
+            showStatusMessage("PS5 #4 activated via fallback method!", "success");
+            deviceControlBadge.innerHTML = `<span>PS5 #4 Active (fallback)</span>`;
+            deviceControlBadge.style.backgroundColor = "rgba(0, 128, 0, 0.7)";
+            return true;
+          }
+        } catch (fallbackError) {
+          console.error("All activation methods failed:", fallbackError);
         }
       }
+      
+      showStatusMessage("All activation methods failed", "error");
+      deviceControlBadge.innerHTML = `<span>PS5 Activation Failed</span>`;
+      deviceControlBadge.style.backgroundColor = "rgba(255, 0, 0, 0.7)";
+      return false;
     }
 
     // Initialize payment details from local storage
@@ -1533,8 +1454,8 @@
           players: players,
           amount: amount,
           direct: true, // Flag for direct ESP32 confirmation
-          timestamp: "2025-08-09 09:38:49", // Updated with current date/time
-          user: 'Azonix07' // Updated with current username
+          timestamp: "2025-08-09 09:55:07", // UPDATED with current date/time
+          user: 'Azonix07' // UPDATED with current username
         };
         
         // Use storage event to communicate between tabs
@@ -1724,7 +1645,7 @@
               payBtn.disabled = false;
               payBtn.classList.remove('btn-disabled');
               
-                           showStatusMessage(`Selected payment method: ${selectedPaymentMethod}`, 'info');
+              showStatusMessage(`Selected payment method: ${selectedPaymentMethod}`, 'info');
             };
           });
           
@@ -1816,7 +1737,7 @@
         // Draw the video frame to the canvas (and flip it horizontally)
         context.translate(canvas.width, 0);
         context.scale(-1, 1);
-        context.drawImage(cameraFeed, 0, 0, cameraFeed.videoWidth, cameraFeed.videoHeight, 
+                context.drawImage(cameraFeed, 0, 0, cameraFeed.videoWidth, cameraFeed.videoHeight, 
                          0, 0, canvas.width, canvas.height);
         
         // Return the data URL of the image
@@ -1912,9 +1833,9 @@
           method: method,
           players: parseInt(players),
           amount: parseInt(amount),
-          createdAt: "2025-08-09 09:46:52", // Current date/time from user input
+          createdAt: "2025-08-09 10:01:11", // UPDATED current date/time
           status: 'pending',
-          user: 'Azonix07' // Current user from user input
+          user: 'Azonix07' // Current username
         };
         
         console.log("Payment data prepared:", paymentData);
@@ -2209,8 +2130,8 @@
           players: players,
           amount: amount,
           transactionId: response ? response.razorpay_payment_id : null,
-          timestamp: "2025-08-09 09:46:52", // Current date/time from user input
-          user: 'Azonix07' // Current user from user input
+          timestamp: "2025-08-09 10:01:11", // UPDATED current date/time
+          user: 'Azonix07' // Current username
         };
         
         // Use storage event to communicate between tabs
@@ -2392,7 +2313,7 @@
           }
           
           // First try status endpoint
-          const statusResponse = await fetch(`http://${deviceControlConfig.serverIP}/status`);
+          const statusResponse = await fetchWithCORS(`http://${deviceControlConfig.serverIP}/status`);
           if (statusResponse.ok) {
             const statusData = await statusResponse.json();
             setStatus(`Connected! Device ID: ${statusData.deviceId}`, 'success');
@@ -2414,7 +2335,7 @@
           }
           
           // Send direct ON command to ESP32
-          const response = await fetch(`http://${deviceControlConfig.serverIP}/on`);
+          const response = await fetchWithCORS(`http://${deviceControlConfig.serverIP}/on`);
           
           if (response.ok) {
             setStatus('ON command successful!', 'success');
@@ -2436,7 +2357,7 @@
           }
           
           // Send direct OFF command to ESP32
-          const response = await fetch(`http://${deviceControlConfig.serverIP}/off`);
+          const response = await fetchWithCORS(`http://${deviceControlConfig.serverIP}/off`);
           
           if (response.ok) {
             setStatus('OFF command successful!', 'success');
