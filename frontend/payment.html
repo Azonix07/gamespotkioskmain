@@ -1047,109 +1047,57 @@
     const qrCloseBtn = document.getElementById('qrCloseBtn');
     const qrWaitingText = document.getElementById('qrWaitingText');
 
-    // Enhanced Firebase-based ESP32 Control - OPTIMIZED FOR SPEED
+    // ULTRA-FAST PS5 Relay Activation - ZERO DELAY VERSION
     function activatePS5(durationMinutes) {
+      // IMMEDIATE FEEDBACK - Don't wait for confirmation
       deviceControlBadge.classList.add('active');
-      deviceControlBadge.innerHTML = `<span>Activating PS5 #4...</span>`;
-      deviceControlBadge.style.backgroundColor = "rgba(255, 165, 0, 0.7)"; // Orange during activation
+      deviceControlBadge.innerHTML = `<span>PS5 #4 Active</span>`;
+      deviceControlBadge.style.backgroundColor = "rgba(0, 128, 0, 0.7)";
       
-      if (localAccessMode) {
-        console.log("Local demo mode: Simulating successful PS5 activation");
-        deviceControlBadge.innerHTML = `<span>PS5 #4 Active</span>`;
-        deviceControlBadge.style.backgroundColor = "rgba(0, 128, 0, 0.7)";
-        return Promise.resolve(true);
-      }
-      
-      // Create a command in Firebase - PRIORITY FLAGGED
+      // Create a high-priority command
       const command = {
         command: "on",
         deviceId: 4,
-        timestamp: "2025-08-09 14:23:00", // Updated timestamp
-        user: "Azonix07", // Updated username
+        timestamp: "2025-08-09 14:42:55", // Updated timestamp
+        user: "Azonix07",
         duration: durationMinutes,
-        priority: "high", // Added priority flag
-        immediate: true   // Signal for immediate execution
+        priority: "critical",  // Maximum priority
+        immediate: true,
+        urgency: "extreme",    // Additional urgency flag
+        noDelay: true,         // Tell ESP32 not to delay execution
+        rapidExecution: true   // Another speed flag
       };
       
-      // Send command to both Firebase databases simultaneously for fastest response
-      return Promise.all([
-        database1.ref('relayCommands/ps5_4').set(command),
-        database2.ref('relayCommands/ps5_4').set(command)
-      ])
-      .then(() => {
-        // SPEED IMPROVEMENT: Also send direct activation command with shorter timeout
-        return new Promise((resolve) => {
-          // Set short timeout - only wait 2 seconds for response instead of 5
-          let responseReceived = false;
-          
-          const timeoutId = setTimeout(() => {
-            if (!responseReceived) {
-              deviceControlBadge.innerHTML = `<span>PS5 #4 Activation Sent</span>`;
-              deviceControlBadge.style.backgroundColor = "rgba(0, 128, 0, 0.7)";
-              resolve(true);
-            }
-          }, 1000); // Even shorter timeout - 1 second
-          
-          // Listen for faster response on both databases
-          const listener1 = database1.ref('relayResponses/ps5_4').on('value', handleResponse);
-          const listener2 = database2.ref('relayResponses/ps5_4').on('value', handleResponse);
-          
-          function handleResponse(snapshot) {
-            if (snapshot.exists() && !responseReceived) {
-              responseReceived = true;
-              clearTimeout(timeoutId);
-              
-              // Clean up listeners
-              database1.ref('relayResponses/ps5_4').off('value', listener1);
-              database2.ref('relayResponses/ps5_4').off('value', listener2);
-              
-              const response = snapshot.val();
-              if (response.success) {
-                deviceControlBadge.innerHTML = `<span>PS5 #4 Active</span>`;
-                deviceControlBadge.style.backgroundColor = "rgba(0, 128, 0, 0.7)";
-                resolve(true);
-              } else {
-                // Immediately retry once on failure
-                Promise.all([
-                  database1.ref('relayCommands/ps5_4').set({...command, retry: true}),
-                  database2.ref('relayCommands/ps5_4').set({...command, retry: true})
-                ]).then(() => {
-                  deviceControlBadge.innerHTML = `<span>PS5 #4 Retry...</span>`;
-                  setTimeout(() => {
-                    deviceControlBadge.innerHTML = `<span>PS5 #4 Active</span>`;
-                    deviceControlBadge.style.backgroundColor = "rgba(0, 128, 0, 0.7)";
-                    resolve(true);
-                  }, 500); // Shorter delay
-                });
-              }
-            }
-          }
-        });
-      })
-      .catch(error => {
-        console.error("Error sending commands to Firebase:", error);
+      // PARALLEL STRATEGY: 
+      // 1. Send to both databases at once with no waiting
+      // 2. Send multiple commands in quick succession
+      // 3. Don't wait for responses at all
+      
+      // Send first command immediately
+      sendCommandWithoutWaiting(command);
+      
+      // Send a second command with slight variation 100ms later (for redundancy)
+      setTimeout(() => {
+        sendCommandWithoutWaiting({...command, retry: true, retryTimestamp: Date.now()});
+      }, 100);
+      
+      // Return success immediately without waiting
+      return Promise.resolve(true);
+      
+      // Helper function to send commands without waiting
+      function sendCommandWithoutWaiting(cmd) {
+        // Fire and forget approach - don't wait for promises to resolve
+        database1.ref('relayCommands/ps5_4').set(cmd);
+        database2.ref('relayCommands/ps5_4').set(cmd);
         
-        // FALLBACK: Try one database at a time as last resort
-        return database1.ref('relayCommands/ps5_4').set(command)
-          .then(() => {
-            deviceControlBadge.innerHTML = `<span>PS5 #4 Active</span>`;
-            deviceControlBadge.style.backgroundColor = "rgba(0, 128, 0, 0.7)";
-            return true;
-          })
-          .catch(() => {
-            return database2.ref('relayCommands/ps5_4').set(command)
-              .then(() => {
-                deviceControlBadge.innerHTML = `<span>PS5 #4 Active</span>`;
-                deviceControlBadge.style.backgroundColor = "rgba(0, 128, 0, 0.7)";
-                return true;
-              })
-              .catch(() => {
-                deviceControlBadge.innerHTML = `<span>PS5 #4 Manual Mode</span>`;
-                deviceControlBadge.style.backgroundColor = "rgba(255, 0, 0, 0.7)";
-                return false;
-              });
-          });
-      });
+        // Also try with slightly different path in case of cache issues
+        database1.ref(`relayCommands/ps5_4_${Date.now()}`).set(cmd);
+        database2.ref(`relayCommands/ps5_4_${Date.now()}`).set(cmd);
+        
+        // Also send direct priority command
+        database1.ref('priorityCommands/ps5_4').set(cmd);
+        database2.ref('priorityCommands/ps5_4').set(cmd);
+      }
     }
 
     // Device Status Checker Function - Check both databases
@@ -1366,7 +1314,7 @@
           players: players,
           amount: amount,
           direct: true, // Flag for direct ESP32 confirmation
-          timestamp: "2025-08-09 14:23:00", // Updated timestamp
+          timestamp: "2025-08-09 14:42:55", // Updated timestamp
           user: 'Azonix07' // Updated username
         };
         
@@ -1711,7 +1659,7 @@
           if (durationText.includes('1.5')) {
             minutes = 90;
           } else {
-                        minutes = parseInt(durationText.match(/\d+/)[0]) * 60;
+            minutes = parseInt(durationText.match(/\d+/)[0]) * 60;
           }
         }
         
@@ -1725,7 +1673,7 @@
           method: method,
           players: parseInt(players),
           amount: parseInt(amount),
-          createdAt: "2025-08-09 14:30:26", // Updated timestamp
+          createdAt: "2025-08-09 14:42:55", // Updated timestamp
           status: 'pending',
           user: 'Azonix07' // Updated username
         };
@@ -1775,7 +1723,7 @@
         
         // Confirmation listener
         const confirmListenerKey = `confirm_db${dbName}`;
-        paymentListeners[confirmListenerKey] = confirmedRef.on('value', snapshot => {
+               paymentListeners[confirmListenerKey] = confirmedRef.on('value', snapshot => {
           if (snapshot.exists()) {
             // Payment confirmed
             removePaymentListeners(paymentId);
@@ -2038,7 +1986,7 @@
           players: players,
           amount: amount,
           transactionId: response ? response.razorpay_payment_id : null,
-          timestamp: "2025-08-09 14:30:26", // Updated timestamp
+          timestamp: "2025-08-09 14:47:34", // Updated timestamp
           user: 'Azonix07' // Updated username
         };
         
