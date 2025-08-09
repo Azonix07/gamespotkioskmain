@@ -1159,7 +1159,7 @@
       const command = {
         command: "on",
         deviceId: 4,
-        timestamp: "2025-08-09 12:07:30", // Updated timestamp
+        timestamp: "2025-08-09 12:34:19", // Updated timestamp
         user: "Azonix07", // Updated username
         duration: durationMinutes
       };
@@ -1317,7 +1317,7 @@
           // Send command via Firebase
           await database.ref('relayCommands/ps5_4').set({
             command: "on",
-            timestamp: "2025-08-09 12:07:30", // Updated timestamp
+            timestamp: "2025-08-09 12:34:19", // Updated timestamp
             user: "Azonix07" // Updated username
           });
           
@@ -1339,7 +1339,7 @@
           // Send command via Firebase
           await database.ref('relayCommands/ps5_4').set({
             command: "off",
-            timestamp: "2025-08-09 12:07:30", // Updated timestamp
+            timestamp: "2025-08-09 12:34:19", // Updated timestamp
             user: "Azonix07" // Updated username
           });
           
@@ -1361,7 +1361,7 @@
           // Send command via Firebase
           await database.ref('relayCommands/ps5_4').set({
             command: "test",
-            timestamp: "2025-08-09 12:07:30", // Updated timestamp
+            timestamp: "2025-08-09 12:34:19", // Updated timestamp
             user: "Azonix07" // Updated username
           });
           
@@ -1557,7 +1557,7 @@
           players: players,
           amount: amount,
           direct: true, // Flag for direct ESP32 confirmation
-          timestamp: "2025-08-09 12:07:30", // Updated timestamp
+          timestamp: "2025-08-09 12:34:19", // Updated timestamp
           user: 'Azonix07' // Updated username
         };
         
@@ -1733,7 +1733,7 @@
           // Add click events to payment methods
           document.querySelectorAll('.payment-method').forEach(method => {
             method.onclick = function() {
-                          // Remove selected class from all methods
+              // Remove selected class from all methods
               document.querySelectorAll('.payment-method').forEach(m => {
                 m.classList.remove('selected');
               });
@@ -1754,8 +1754,7 @@
           
           showStatusMessage('Camera activated. Select payment method to continue.', 'info');
         });
-        
-        // Add error handler for video
+                // Add error handler for video
         cameraFeed.addEventListener('error', function(e) {
           console.error("Video error:", e);
           skipCamera("Video error: " + (e.message || "Unknown error"));
@@ -1936,7 +1935,7 @@
           method: method,
           players: parseInt(players),
           amount: parseInt(amount),
-          createdAt: "2025-08-09 12:14:36", // Updated timestamp
+          createdAt: "2025-08-09 12:45:10", // Updated timestamp
           status: 'pending',
           user: 'Azonix07' // Updated username
         };
@@ -2233,7 +2232,7 @@
           players: players,
           amount: amount,
           transactionId: response ? response.razorpay_payment_id : null,
-          timestamp: "2025-08-09 12:14:36", // Updated timestamp
+          timestamp: "2025-08-09 12:45:10", // Updated timestamp
           user: 'Azonix07' // Updated username
         };
         
