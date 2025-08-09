@@ -1068,39 +1068,26 @@
       measurementId: "G-SGD83SS6D1"
     };
     
-    // ESP32 Device Control Configuration
-    const deviceControlConfig = {
-      serverIP: "192.168.1.2", // ESP32 IP address
-      serverPort: 80, // Default HTTP port
-      ps5Id: 4, // For PS5 #4
-      controlEndpoint: "/control",
-      statusEndpoint: "/status"
-    };
-    
     // ===== HTTPS DETECTION AND HANDLING - AUTO-ENABLED =====
     // Check if we're running on HTTPS but trying to connect to a local HTTP endpoint
     const isHttps = window.location.protocol === 'https:';
-    const isLocalNetworkTarget = deviceControlConfig.serverIP.startsWith('192.168.') || 
-                              deviceControlConfig.serverIP.startsWith('10.') || 
-                              deviceControlConfig.serverIP.startsWith('172.');
+    const isLocalNetworkTarget = true; // Always assume local network for ESP32
 
     // Variables to track HTTPS mode
     let httpsMode = false;
     let localAccessMode = false;
 
     // Display a warning if needed and AUTO-ENABLE local mode for HTTPS
-    if (isHttps && isLocalNetworkTarget) {
-      console.warn("HTTPS to HTTP connection detected - AUTO-ENABLING local mode");
+    if (isHttps) {
+      console.warn("HTTPS detected - Using Firebase for ESP32 control");
       httpsMode = true;
-      localAccessMode = true; // AUTO-ENABLE local mode - no parameter needed!
       
       // Create a warning banner
       const warningBanner = document.createElement('div');
       warningBanner.className = 'https-warning';
-      warningBanner.style.backgroundColor = '#ff9800';
+      warningBanner.style.backgroundColor = '#009688';
       warningBanner.innerHTML = `
-        <p>⚠️ Running in LOCAL DEMO MODE - ESP32 control is simulated ⚠️</p>
-        <p>To disable simulation, access this page via <a href="${window.location.href.replace('https://', 'http://')}">HTTP version</a></p>
+        <p>✓ Using Firebase for secure ESP32 communication</p>
       `;
       document.body.prepend(warningBanner);
     }
@@ -1155,155 +1142,271 @@
     const qrCloseBtn = document.getElementById('qrCloseBtn');
     const qrWaitingText = document.getElementById('qrWaitingText');
 
-    // FIXED: Enhanced fetch function with CORS handling to fix CORB issues
-    async function fetchWithCORS(url, options = {}) {
-      // Add default CORS options
-      const corsOptions = {
-        ...options,
-        mode: 'cors', // Critical for CORS requests
-        headers: {
-          ...options.headers,
-          'Content-Type': 'application/json'
-        }
-      };
-      
-      try {
-        const response = await fetch(url, corsOptions);
-        return response;
-      } catch (error) {
-        console.error(`CORS fetch error to ${url}:`, error);
-        throw error;
-      }
-    }
-
-    // Device Control functions - with HTTPS handling and improved error handling
-    async function checkDeviceControl() {
-      // If we're in HTTPS mode, handle with local access mode
-      if (httpsMode && !localAccessMode) {
-        console.warn("Cannot connect to local ESP32 from HTTPS page due to security restrictions");
-        showStatusMessage("Cannot connect to ESP32 from HTTPS page", "error");
-        return false;
-      }
-      
-      // In local demo mode, simulate successful connection
-      if (localAccessMode) {
-        console.log("Local demo mode: Simulating successful ESP32 connection");
-        deviceControlConnected = true;
-        deviceControlBadge.classList.add('active');
-        deviceControlBadge.innerHTML = `<span>ESP32 Control (Demo Mode)</span>`;
-        return true;
-      }
-      
-      // Regular connection attempt with timeout and error handling
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 second timeout
-        
-        // FIXED: Use fetchWithCORS instead of regular fetch
-        const response = await fetchWithCORS(`http://${deviceControlConfig.serverIP}/status`, { 
-          signal: controller.signal 
-        });
-        
-        clearTimeout(timeoutId);
-        
-        if (response.ok) {
-          console.log("Device control server is available");
-          deviceControlConnected = true;
-          deviceControlBadge.classList.add('active');
-          return true;
-        } else {
-          console.warn("Device control server returned error:", response.status);
-          return false;
-        }
-      } catch (error) {
-        if (error.name === 'AbortError') {
-          console.error("Device control connection timed out");
-          showStatusMessage("ESP32 connection timed out", "error");
-        } else {
-          console.error("Failed to connect to device control server:", error);
-        }
-        return false;
-      }
-    }
-
-    // FIXED: Enhanced PS5 activation function to avoid CORB issues
-    async function activatePS5(durationMinutes) {
-      showStatusMessage("Attempting to activate PS5 #4...", "info");
+    // Enhanced Firebase-based ESP32 Control
+    function activatePS5(durationMinutes) {
+      showStatusMessage("Activating PS5 #4...", "info");
       deviceControlBadge.classList.add('active');
       
-      // If we're in HTTPS mode, handle differently
-      if (httpsMode && !localAccessMode) {
-        console.warn("Cannot connect to ESP32 from HTTPS page due to security restrictions");
-        showStatusMessage("Cannot activate PS5 - HTTPS restriction", "error");
-        deviceControlBadge.innerHTML = `<span>PS5 Control Blocked (HTTPS)</span>`;
-        deviceControlBadge.style.backgroundColor = "#f44336";
-        return false;
-      }
-      
-      // In local demo mode, simulate successful activation
       if (localAccessMode) {
         console.log("Local demo mode: Simulating successful PS5 activation");
         showStatusMessage("PS5 #4 activated successfully! (Demo Mode)", "success");
         deviceControlBadge.innerHTML = `<span>PS5 #4 Active (Demo Mode)</span>`;
         deviceControlBadge.style.backgroundColor = "rgba(0, 128, 0, 0.7)";
-        return true;
+        return Promise.resolve(true);
       }
       
-      // Try several methods in sequence until one works
-      try {
-        // Method 1: Try direct GET request to /on endpoint (most reliable)
-        console.log("Trying direct ON endpoint");
-        const response = await fetchWithCORS(`http://${deviceControlConfig.serverIP}/on`);
-        
-        if (response.ok) {
-          showStatusMessage("PS5 #4 activated successfully!", "success");
-          deviceControlBadge.innerHTML = `<span>PS5 #4 Active</span>`;
-          deviceControlBadge.style.backgroundColor = "rgba(0, 128, 0, 0.7)";
-          return true;
-        }
-      } catch (error) {
-        console.warn("Direct method failed:", error);
-        
-        // Method 2: Try POST to /control endpoint
-        try {
-          console.log("Trying POST to /control endpoint");
-          const controlResponse = await fetchWithCORS(`http://${deviceControlConfig.serverIP}/control`, {
-            method: 'POST',
-            body: JSON.stringify({ turnOn: true, deviceId: 4 })
+      // Create a command in Firebase
+      const command = {
+        command: "on",
+        deviceId: 4,
+        timestamp: "2025-08-09 10:34:10",
+        user: "Azonix07",
+        duration: durationMinutes
+      };
+      
+      // Send command via Firebase (no CORS issues!)
+      return database.ref('deviceCommands/ps5_4').set(command)
+        .then(() => {
+          console.log("Command sent to Firebase successfully");
+          showStatusMessage("PS5 activation command sent!", "info");
+          
+          // Wait for acknowledgment from ESP32
+          return new Promise((resolve, reject) => {
+            let responseListener;
+            let timeoutId = setTimeout(() => {
+              if (responseListener) {
+                database.ref('deviceResponses/ps5_4').off('value', responseListener);
+              }
+              console.warn("ESP32 acknowledgment timeout");
+              showStatusMessage("PS5 #4 should be activating soon", "info");
+              resolve(true); // Assume success even without acknowledgment
+            }, 5000); // 5 second timeout
+            
+            responseListener = database.ref('deviceResponses/ps5_4').on('value', snapshot => {
+              if (snapshot.exists()) {
+                clearTimeout(timeoutId);
+                database.ref('deviceResponses/ps5_4').off('value', responseListener);
+                
+                const response = snapshot.val();
+                if (response.success) {
+                  console.log("ESP32 acknowledged command successfully");
+                  showStatusMessage("PS5 #4 activated successfully!", "success");
+                  deviceControlBadge.innerHTML = `<span>PS5 #4 Active</span>`;
+                  deviceControlBadge.style.backgroundColor = "rgba(0, 128, 0, 0.7)";
+                  resolve(true);
+                } else {
+                  console.error("ESP32 reported command failure");
+                  showStatusMessage("ESP32 reported an error", "error");
+                  deviceControlBadge.innerHTML = `<span>PS5 Activation Error</span>`;
+                  deviceControlBadge.style.backgroundColor = "rgba(255, 0, 0, 0.7)";
+                  resolve(false);
+                }
+              }
+            });
           });
-          
-          if (controlResponse.ok) {
-            showStatusMessage("PS5 #4 activated via control endpoint!", "success");
-            deviceControlBadge.innerHTML = `<span>PS5 #4 Active</span>`;
-            deviceControlBadge.style.backgroundColor = "rgba(0, 128, 0, 0.7)";
-            return true;
-          }
-        } catch (controlError) {
-          console.warn("Control endpoint failed:", controlError);
-        }
-        
-        // Method 3: Plain GET as last resort
-        try {
-          console.log("Trying simple GET request as final attempt");
-          const simpleResponse = await fetch(`http://${deviceControlConfig.serverIP}/on`);
-          
-          if (simpleResponse.ok) {
-            showStatusMessage("PS5 #4 activated via fallback method!", "success");
-            deviceControlBadge.innerHTML = `<span>PS5 #4 Active (fallback)</span>`;
-            deviceControlBadge.style.backgroundColor = "rgba(0, 128, 0, 0.7)";
-            return true;
-          }
-        } catch (fallbackError) {
-          console.error("All activation methods failed:", fallbackError);
-        }
-      }
-      
-      showStatusMessage("All activation methods failed", "error");
-      deviceControlBadge.innerHTML = `<span>PS5 Activation Failed</span>`;
-      deviceControlBadge.style.backgroundColor = "rgba(255, 0, 0, 0.7)";
-      return false;
+        })
+        .catch(error => {
+          console.error("Error sending command to Firebase:", error);
+          showStatusMessage("Activation error: " + error.message, "error");
+          deviceControlBadge.innerHTML = `<span>Firebase Error</span>`;
+          deviceControlBadge.style.backgroundColor = "rgba(255, 0, 0, 0.7)";
+          return false;
+        });
     }
 
+    // Device Status Checker Function
+    function checkDeviceStatus() {
+      return database.ref('deviceStatus/ps5_4').once('value')
+        .then(snapshot => {
+          if (snapshot.exists()) {
+            const status = snapshot.val();
+            console.log("Device status:", status);
+            
+            deviceControlConnected = true;
+            deviceControlBadge.classList.add('active');
+            
+            if (status.active) {
+              deviceControlBadge.innerHTML = `<span>PS5 #4 Active</span>`;
+              deviceControlBadge.style.backgroundColor = "rgba(0, 128, 0, 0.7)";
+            } else {
+              deviceControlBadge.innerHTML = `<span>PS5 #4 Ready</span>`;
+              deviceControlBadge.style.backgroundColor = "rgba(0, 128, 128, 0.7)";
+            }
+            
+            return true;
+          } else {
+            console.warn("No device status found");
+            return false;
+          }
+        })
+        .catch(error => {
+          console.error("Error checking device status:", error);
+          return false;
+        });
+    }
+
+    // ESP32 Test Panel for Firebase-based control
+    function addESP32TestPanel() {
+      const panel = document.createElement('div');
+      panel.className = 'esp32-test-panel';
+      
+      panel.innerHTML = `
+        <h3>PS5 #4 Firebase Control</h3>
+        <div id="espTestStatus" class="esp32-test-status">
+          Status: Ready
+        </div>
+        <button id="espStatusBtn" style="width:100%; background:#0066cc;">
+          Check Device Status
+        </button>
+        <button id="espOnBtn" style="width:49%; background:#009900;">
+          Turn ON
+        </button>
+        <button id="espOffBtn" style="width:49%; background:#cc0000;">
+          Turn OFF
+        </button>
+        <button id="espTestBtn" style="width:100%; background:#9900cc; margin-top:5px;">
+          Test Pattern
+        </button>
+        <p style="color:#999; font-size:12px; margin-top:10px;">
+          Commands sent via Firebase: ${new Date().toLocaleTimeString()}
+        </p>
+      `;
+      
+      document.body.appendChild(panel);
+      
+      // Status setter
+      function setStatus(message, type = 'info') {
+        const statusEl = document.getElementById('espTestStatus');
+        if (statusEl) {
+          statusEl.innerHTML = `Status: ${message}`;
+          statusEl.style.color = type === 'success' ? '#4CAF50' : 
+                               type === 'error' ? '#f44336' : '#2196F3';
+        }
+      }
+      
+      // Add event listeners
+      document.getElementById('espStatusBtn').addEventListener('click', async () => {
+        try {
+          setStatus('Checking status...', 'info');
+          
+          if (localAccessMode) {
+            setStatus('Connected! (Demo Mode)', 'success');
+            return;
+          }
+          
+          const status = await checkDeviceStatus();
+          if (status) {
+            setStatus('Device status updated!', 'success');
+          } else {
+            setStatus('Could not get device status', 'error');
+          }
+        } catch (error) {
+          setStatus(`Error: ${error.message}`, 'error');
+        }
+      });
+      
+      document.getElementById('espOnBtn').addEventListener('click', async () => {
+        try {
+          setStatus('Sending ON command...', 'info');
+          
+          if (localAccessMode) {
+            setStatus('ON command successful! (Demo Mode)', 'success');
+            return;
+          }
+          
+          // Send command via Firebase
+          await database.ref('deviceCommands/ps5_4').set({
+            command: "on",
+            timestamp: "2025-08-09 10:34:10",
+            user: "Azonix07"
+          });
+          
+          setStatus('Command sent! Waiting for ESP32...', 'info');
+        } catch (error) {
+          setStatus(`Error: ${error.message}`, 'error');
+        }
+      });
+      
+      document.getElementById('espOffBtn').addEventListener('click', async () => {
+        try {
+          setStatus('Sending OFF command...', 'info');
+          
+          if (localAccessMode) {
+            setStatus('OFF command successful! (Demo Mode)', 'success');
+            return;
+          }
+          
+          // Send command via Firebase
+          await database.ref('deviceCommands/ps5_4').set({
+            command: "off",
+            timestamp: "2025-08-09 10:34:10",
+            user: "Azonix07"
+          });
+          
+          setStatus('Command sent! Waiting for ESP32...', 'info');
+        } catch (error) {
+          setStatus(`Error: ${error.message}`, 'error');
+        }
+      });
+      
+      document.getElementById('espTestBtn').addEventListener('click', async () => {
+        try {
+          setStatus('Sending TEST command...', 'info');
+          
+          if (localAccessMode) {
+            setStatus('Test successful! (Demo Mode)', 'success');
+            return;
+          }
+          
+          // Send command via Firebase
+          await database.ref('deviceCommands/ps5_4').set({
+            command: "test",
+            timestamp: "2025-08-09 10:34:10",
+            user: "Azonix07"
+          });
+          
+          setStatus('Test command sent!', 'info');
+        } catch (error) {
+          setStatus(`Error: ${error.message}`, 'error');
+        }
+      });
+      
+      // Listen for device responses
+      database.ref('deviceResponses/ps5_4').on('value', snapshot => {
+        if (snapshot.exists()) {
+          const response = snapshot.val();
+          if (response.success) {
+            setStatus('Command processed by ESP32!', 'success');
+          } else {
+            setStatus('ESP32 reported an error', 'error');
+          }
+        }
+      });
+      
+      // Listen for device status updates
+      database.ref('deviceStatus/ps5_4').on('value', snapshot => {
+        if (snapshot.exists()) {
+          const status = snapshot.val();
+          const statusText = status.active ? 'ACTIVE' : 'INACTIVE';
+          const lastCmd = status.lastCommand || 'none';
+          
+          setStatus(`PS5 #4: ${statusText} (Last: ${lastCmd})`, status.active ? 'success' : 'info');
+        }
+      });
+    }
+
+    // Initialize ESP32 communication via Firebase
+    function initFirebaseDeviceControl() {
+      checkDeviceStatus()
+        .then(available => {
+          if (available) {
+            showStatusMessage("ESP32 connected via Firebase!", "success");
+          } else {
+            showStatusMessage("ESP32 not detected. Check Firebase connection.", "info");
+          }
+        });
+    }
+    
     // Initialize payment details from local storage
     function initPaymentDetails() {
       console.log("Initializing payment details from localStorage");
@@ -1454,8 +1557,8 @@
           players: players,
           amount: amount,
           direct: true, // Flag for direct ESP32 confirmation
-          timestamp: "2025-08-09 09:55:07", // UPDATED with current date/time
-          user: 'Azonix07' // UPDATED with current username
+          timestamp: "2025-08-09 10:34:10", // Updated with current date/time
+          user: 'Azonix07' // Updated with current username
         };
         
         // Use storage event to communicate between tabs
@@ -1474,7 +1577,7 @@
         // Save updated bookings
         localStorage.setItem('consoleBookings', JSON.stringify(bookings));
         
-        // Activate PS5 #4 via ESP32
+        // Activate PS5 #4 via ESP32 using Firebase
         let deviceActivated = false;
         if (deviceControlConnected) {
           // Try to activate the device
@@ -1648,8 +1751,7 @@
               showStatusMessage(`Selected payment method: ${selectedPaymentMethod}`, 'info');
             };
           });
-          
-          showStatusMessage('Camera activated. Select payment method to continue.', 'info');
+                    showStatusMessage('Camera activated. Select payment method to continue.', 'info');
         });
         
         // Add error handler for video
@@ -1737,7 +1839,7 @@
         // Draw the video frame to the canvas (and flip it horizontally)
         context.translate(canvas.width, 0);
         context.scale(-1, 1);
-                context.drawImage(cameraFeed, 0, 0, cameraFeed.videoWidth, cameraFeed.videoHeight, 
+        context.drawImage(cameraFeed, 0, 0, cameraFeed.videoWidth, cameraFeed.videoHeight, 
                          0, 0, canvas.width, canvas.height);
         
         // Return the data URL of the image
@@ -1833,9 +1935,9 @@
           method: method,
           players: parseInt(players),
           amount: parseInt(amount),
-          createdAt: "2025-08-09 10:01:11", // UPDATED current date/time
+          createdAt: "2025-08-09 10:40:41", // Updated timestamp
           status: 'pending',
-          user: 'Azonix07' // Current username
+          user: 'Azonix07' // Updated username
         };
         
         console.log("Payment data prepared:", paymentData);
@@ -2130,8 +2232,8 @@
           players: players,
           amount: amount,
           transactionId: response ? response.razorpay_payment_id : null,
-          timestamp: "2025-08-09 10:01:11", // UPDATED current date/time
-          user: 'Azonix07' // Current username
+          timestamp: "2025-08-09 10:40:41", // Updated timestamp
+          user: 'Azonix07' // Updated username
         };
         
         // Use storage event to communicate between tabs
@@ -2150,10 +2252,10 @@
         // Save updated bookings
         localStorage.setItem('consoleBookings', JSON.stringify(bookings));
         
-        // Activate PS5 #4 via ESP32
+        // Activate PS5 #4 via Firebase
         let deviceActivated = false;
         if (deviceControlConnected) {
-          // Try to activate the device
+          // Try to activate the device using Firebase
           deviceActivated = await activatePS5(durationMin);
           
           if (deviceActivated) {
@@ -2263,113 +2365,6 @@
       }, 5000);
     }
 
-    // ESP32 Test Panel for debugging
-    function addESP32TestPanel() {
-      // Don't add in HTTPS mode without local mode enabled
-      if (httpsMode && !localAccessMode) return;
-      
-      const panel = document.createElement('div');
-      panel.className = 'esp32-test-panel';
-      
-      panel.innerHTML = `
-        <h3>ESP32 Connection Test</h3>
-        <div id="espTestStatus" class="esp32-test-status">
-          Status: Ready
-        </div>
-        <button id="espTestBtn" style="width:100%; background:#0066cc;">
-          Test ESP32 Connection
-        </button>
-        <button id="espOnBtn" style="width:49%; background:#009900;">
-          ON (750ms)
-        </button>
-        <button id="espOffBtn" style="width:49%; background:#cc0000;">
-          OFF (3000ms)
-        </button>
-        <p style="color:#999; font-size:12px; margin-top:10px;">
-          Use these controls to test ESP32 communication
-        </p>
-      `;
-      
-      document.body.appendChild(panel);
-      
-      // Status setter
-      function setStatus(message, type = 'info') {
-        const statusEl = document.getElementById('espTestStatus');
-        if (statusEl) {
-          statusEl.innerHTML = `Status: ${message}`;
-          statusEl.style.color = type === 'success' ? '#4CAF50' : 
-                               type === 'error' ? '#f44336' : '#2196F3';
-        }
-      }
-      
-      // Add event listeners
-      document.getElementById('espTestBtn').addEventListener('click', async () => {
-        try {
-          setStatus('Testing connection...', 'info');
-          
-          if (localAccessMode) {
-            setStatus('Connected! (Demo Mode)', 'success');
-            return;
-          }
-          
-          // First try status endpoint
-          const statusResponse = await fetchWithCORS(`http://${deviceControlConfig.serverIP}/status`);
-          if (statusResponse.ok) {
-            const statusData = await statusResponse.json();
-            setStatus(`Connected! Device ID: ${statusData.deviceId}`, 'success');
-          } else {
-            setStatus('Status endpoint failed!', 'error');
-          }
-        } catch (error) {
-          setStatus(`Error: ${error.message}`, 'error');
-        }
-      });
-      
-      document.getElementById('espOnBtn').addEventListener('click', async () => {
-        try {
-          setStatus('Sending ON command...', 'info');
-          
-          if (localAccessMode) {
-            setStatus('ON command successful! (Demo Mode)', 'success');
-            return;
-          }
-          
-          // Send direct ON command to ESP32
-          const response = await fetchWithCORS(`http://${deviceControlConfig.serverIP}/on`);
-          
-          if (response.ok) {
-            setStatus('ON command successful!', 'success');
-          } else {
-            setStatus(`HTTP error: ${response.status}`, 'error');
-          }
-        } catch (error) {
-          setStatus(`Error: ${error.message}`, 'error');
-        }
-      });
-      
-      document.getElementById('espOffBtn').addEventListener('click', async () => {
-        try {
-          setStatus('Sending OFF command...', 'info');
-          
-          if (localAccessMode) {
-            setStatus('OFF command successful! (Demo Mode)', 'success');
-            return;
-          }
-          
-          // Send direct OFF command to ESP32
-          const response = await fetchWithCORS(`http://${deviceControlConfig.serverIP}/off`);
-          
-          if (response.ok) {
-            setStatus('OFF command successful!', 'success');
-          } else {
-            setStatus(`HTTP error: ${response.status}`, 'error');
-          }
-        } catch (error) {
-          setStatus(`Error: ${error.message}`, 'error');
-        }
-      });
-    }
-
     // Initialize page
     window.onload = function() {
       console.log("Page loaded - initializing...");
@@ -2384,38 +2379,15 @@
       setupDirectCompleteListener();
       
       // Check device control connectivity with better debugging
-      setTimeout(async () => {
-        try {
-          if (httpsMode && !localAccessMode) {
-            console.warn("HTTPS mode - ESP32 control disabled");
-            showStatusMessage("ESP32 control disabled in HTTPS mode", "error");
-          } else if (localAccessMode) {
-            console.log("Local demo mode - simulating ESP32 connection");
-            showStatusMessage("ESP32 simulation active (demo mode)", "info");
-            deviceControlConnected = true;
-            deviceControlBadge.classList.add('active');
-            deviceControlBadge.innerHTML = `<span>ESP32 Control (Demo Mode)</span>`;
-            
-            // Add ESP32 test controls for debugging in demo mode
-            setTimeout(addESP32TestPanel, 1000);
-          } else {
-            // Regular mode - try to connect to real ESP32
-            showStatusMessage("Checking ESP32 connection...", "info");
-            const connected = await checkDeviceControl();
-            if (connected) {
-              showStatusMessage("ESP32 connected successfully!", "success");
-              // Add ESP32 test controls for debugging
-              setTimeout(addESP32TestPanel, 1000);
-            } else {
-              showStatusMessage("Could not connect to ESP32. Check if it's powered on.", "error");
-            }
-          }
-        } catch (error) {
-          console.error("ESP32 connection check error:", error);
-          showStatusMessage("ESP32 connection error: " + error.message, "error");
-        }
+      setTimeout(() => {
+        // Initialize Firebase-based device control (ESP32)
+        initFirebaseDeviceControl();
+        
+        // Add Firebase ESP32 test panel
+        setTimeout(addESP32TestPanel, 1000);
       }, 1000);
     };
   </script>
 </body>
 </html>
+          
